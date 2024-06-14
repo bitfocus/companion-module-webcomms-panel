@@ -1,5 +1,9 @@
-const { InstanceBase, Regex, runEntrypoint } = require('@companion-module/base')
+const { InstanceBase, runEntrypoint, combineRgb } = require('@companion-module/base')
 const UpgradeScripts = require('./upgrades')
+const supabase = require('@supabase/supabase-js')
+const dotenv = require('dotenv');
+
+dotenv.config()
 
 class OSCInstance extends InstanceBase {
 	constructor(internal) {
@@ -9,9 +13,27 @@ class OSCInstance extends InstanceBase {
 	async init(config) {
 		this.config = config
 
+		this.updateStatus('connecting');
+		this.supabase = supabase.createClient(process.env.PUBLIC_SUPABASE_URL, process.env.PUBLIC_SUPABASE_KEY)
+		this.channelChoices = []
+
+		if (this.config.intercomName) {
+			this.intercomConfig = await this.supabase.from('intercoms').select('*').eq('name', this.config.intercomName).single()
+			if (this.intercomConfig.error) {
+				this.updateStatus('bad_config', this.intercomConfig.statusText)
+				return
+			}
+
+
+			this.channel = this.supabase.channel(this.config.intercomName)
+			this.channelChoices = []
+			this.intercomConfig.data.config.channels.map((ch) => { this.channelChoices.push({ id: ch, label: ch }) })
+		}
+
 		this.updateStatus('ok')
 
 		this.updateActions() // export actions
+		this.updateFeedbacks()
 	}
 	// When module gets deleted
 	async destroy() {
@@ -19,251 +41,135 @@ class OSCInstance extends InstanceBase {
 	}
 
 	async configUpdated(config) {
+		this.channelChoices = []
 		this.config = config
+
+		this.updateStatus('connecting');
+
+		if (this.config.intercomName) {
+			this.intercomConfig = await this.supabase.from('intercoms').select('*').eq('name', this.config.intercomName).single()
+			if (this.intercomConfig.error) {
+				this.updateStatus('bad_config', this.intercomConfig.statusText)
+				return
+			}
+
+
+			this.channel = this.supabase.channel(this.config.intercomName)
+			this.messages = {}
+			this.channel.on('broadcast', { event: this.config.userID }, (msg) => {
+				this.messages = msg
+				this.log('info', JSON.stringify(msg))
+			}).subscribe()
+
+			this.intercomConfig.data.config.channels.map((ch) => { this.channelChoices.push({ id: ch, label: ch }) })
+		}
+
+		this.updateStatus('ok')
+
+		this.updateActions()
+		this.updateFeedbacks()
+
 	}
+
 
 	// Return config fields for web config
 	getConfigFields() {
 		return [
 			{
 				type: 'textinput',
-				id: 'host',
-				label: 'Target IP',
-				width: 8,
-				regex: Regex.IP,
+				id: 'intercomName',
+				label: 'Intercom Name',
+				width: 12,
+				default: ''
 			},
 			{
 				type: 'textinput',
-				id: 'port',
-				label: 'Target Port',
-				width: 4,
-				regex: Regex.PORT,
+				id: 'userID',
+				label: 'User ID',
+				width: 12,
+				default: ''
 			},
 		]
 	}
 
 	updateActions() {
-		const sendOscMessage = (path, args) => {
-			this.log('debug', `Sending OSC ${this.config.host}:${this.config.port} ${path}`)
-			this.log('debug', `Sending Args ${JSON.stringify(args)}`)
-			this.oscSend(this.config.host, this.config.port, path, args)
-		}
-
 		this.setActionDefinitions({
-			send_blank: {
-				name: 'Send message without arguments',
+			activateTalk: {
+				name: 'Activate talk on a channel',
 				options: [
 					{
-						type: 'textinput',
-						label: 'OSC Path',
-						id: 'path',
-						default: '/osc/path',
-						useVariables: true,
-					},
-				],
-				callback: async (event) => {
-					const path = await this.parseVariablesInString(event.options.path)
-
-					sendOscMessage(path, [])
-				},
-			},
-			send_int: {
-				name: 'Send integer',
-				options: [
-					{
-						type: 'textinput',
-						label: 'OSC Path',
-						id: 'path',
-						default: '/osc/path',
-						useVariables: true,
-					},
-					{
-						type: 'textinput',
-						label: 'Value',
-						id: 'int',
-						default: 1,
-						regex: Regex.SIGNED_NUMBER,
-						useVariables: true,
-					},
-				],
-				callback: async (event) => {
-					const path = await this.parseVariablesInString(event.options.path)
-					const int = await this.parseVariablesInString(event.options.int)
-
-					sendOscMessage(path, [
-						{
-							type: 'i',
-							value: parseInt(int),
-						},
-					])
-				},
-			},
-			send_float: {
-				name: 'Send float',
-				options: [
-					{
-						type: 'textinput',
-						label: 'OSC Path',
-						id: 'path',
-						default: '/osc/path',
-						useVariables: true,
-					},
-					{
-						type: 'textinput',
-						label: 'Value',
-						id: 'float',
-						default: 1,
-						regex: Regex.SIGNED_FLOAT,
-						useVariables: true,
-					},
-				],
-				callback: async (event) => {
-					const path = await this.parseVariablesInString(event.options.path)
-					const float = await this.parseVariablesInString(event.options.float)
-
-					sendOscMessage(path, [
-						{
-							type: 'f',
-							value: parseFloat(float),
-						},
-					])
-				},
-			},
-			send_string: {
-				name: 'Send string',
-				options: [
-					{
-						type: 'textinput',
-						label: 'OSC Path',
-						id: 'path',
-						default: '/osc/path',
-						useVariables: true,
-					},
-					{
-						type: 'textinput',
-						label: 'Value',
-						id: 'string',
-						default: 'text',
-						useVariables: true,
-					},
-				],
-				callback: async (event) => {
-					const path = await this.parseVariablesInString(event.options.path)
-					const string = await this.parseVariablesInString(event.options.string)
-
-					sendOscMessage(path, [
-						{
-							type: 's',
-							value: '' + string,
-						},
-					])
-				},
-			},
-			send_multiple: {
-				name: 'Send message with multiple arguments',
-				options: [
-					{
-						type: 'textinput',
-						label: 'OSC Path',
-						id: 'path',
-						default: '/osc/path',
-						useVariables: true,
-					},
-					{
-						type: 'textinput',
-						label: 'Arguments',
-						id: 'arguments',
-						default: '1 "test" 2.5',
-						useVariables: true,
-					},
-				],
-				callback: async (event) => {
-					const path = await this.parseVariablesInString(event.options.path)
-					const argsStr = await this.parseVariablesInString(event.options.arguments)
-
-					const rawArgs = (argsStr + '').replace(/“/g, '"').replace(/”/g, '"').split(' ')
-
-					if (rawArgs.length) {
-						const args = []
-						for (let i = 0; i < rawArgs.length; i++) {
-							if (rawArgs[i].length == 0) continue
-							if (isNaN(rawArgs[i])) {
-								let str = rawArgs[i]
-								if (str.startsWith('"')) {
-									//a quoted string..
-									while (!rawArgs[i].endsWith('"')) {
-										i++
-										str += ' ' + rawArgs[i]
-									}
-								} else if(str.startsWith('{')) {
-									//Probably a JSON object
-									try {
-										args.push((JSON.parse(rawArgs[i])))
-									} catch (error) {
-										this.log('error', `not a JSON object ${rawArgs[i]}`)
-									}
-								}
-
-								args.push({
-									type: 's',
-									value: str.replace(/"/g, '').replace(/'/g, ''),
-								})
-							} else if (rawArgs[i].indexOf('.') > -1) {
-								args.push({
-									type: 'f',
-									value: parseFloat(rawArgs[i]),
-								})
-							} else {
-								args.push({
-									type: 'i',
-									value: parseInt(rawArgs[i]),
-								})
-							}
-						}
-
-						sendOscMessage(path, args)
+						type: 'dropdown',
+						label: "Channel",
+						id: "channel",
+						choices: this.channelChoices
 					}
-				},
-			},
-			send_boolean: {
-				name: 'Send boolean',
-				options: [
-					{
-						type: 'static-text',
-						label: 'Attention',
-						value: 'The boolean type is non-standard and may only work with some receivers.',
-						id: 'warning'
-					},
-					{
-						type: 'textinput',
-						label: 'OSC Path',
-						id: 'path',
-						default: '/osc/path',
-						useVariables: true,
-					},
-					{
-						type: 'checkbox',
-						label: 'Value',
-						id: 'value',
-						default: false,
-					},
 				],
 				callback: async (event) => {
-					const path = await this.parseVariablesInString(event.options.path)
-					let type = 'F'
-					if (event.options.value === true) {
-						type = 'T'
-					}
-
-					sendOscMessage(path, [
-						{
-							type,
-						},
-					])
-				},
+					const changeObj = {}
+					changeObj[event.options.channel] = { talking: true }
+					await this.channel.send({
+						type: 'broadcast',
+						event: this.config.userID,
+						payload: { ...changeObj }
+					})
+					setTimeout(() => { this.checkFeedbacks('talkActive') }, 100)
+				}
 			},
+			deactivateTalk: {
+				name: 'Deactivate talk on a channel',
+				options: [
+					{
+						type: 'dropdown',
+						label: "Channel",
+						id: "channel",
+						choices: this.channelChoices
+					}
+				],
+				callback: async (event) => {
+					const changeObj = {}
+					changeObj[event.options.channel] = { talking: false }
+					await this.channel.send({
+						type: 'broadcast',
+						event: this.config.userID,
+						payload: { ...changeObj }
+					})
+					setTimeout(() => { this.checkFeedbacks('talkActive') }, 100)
+				}
+			},
+
+		})
+	}
+
+	updateFeedbacks() {
+		this.setFeedbackDefinitions({
+			talkActive: {
+				type: 'boolean',
+				name: 'talkActive',
+				id: 'talkActive',
+				defaultStyle: {
+					// The default style change for a boolean feedback
+					// The user will be able to customise these values as well as the fields that will be changed
+					bgcolor: combineRgb(255, 0, 0),
+					color: combineRgb(0, 0, 0),
+				},
+				// options is how the user can choose the condition the feedback activates for
+				options: [{
+					type: 'dropdown',
+					label: 'Channel',
+					id: 'channel',
+					choices: this.channelChoices
+				}],
+				callback: (feedback) => {
+					this.log('debug', JSON.stringify({"Notice": "feedback", feedback: feedback, messages: this.messages }))
+					if (this.messages?.payload[feedback.options.channel] !== undefined) {
+						return this.messages.payload[feedback.options.channel].talking
+					} else {
+						return false
+					}
+				}
+			}
 		})
 	}
 }
 
-runEntrypoint(OSCInstance, UpgradeScripts)
+runEntrypoint(OSCInstance, UpgradeScripts);
