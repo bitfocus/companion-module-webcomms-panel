@@ -16,7 +16,7 @@ const supabase = require('@supabase/supabase-js')
 * @property {companionEventPayload} payload
 */
 
-class OSCInstance extends InstanceBase {
+class PanelInstance extends InstanceBase {
 	constructor(internal) {
 		super(internal)
 	}
@@ -368,4 +368,4 @@ class OSCInstance extends InstanceBase {
 	}
 }
 
-runEntrypoint(OSCInstance, UpgradeScripts);
+runEntrypoint(PanelInstance, UpgradeScripts);
