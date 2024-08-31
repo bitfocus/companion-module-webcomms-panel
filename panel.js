@@ -29,11 +29,11 @@ class OSCInstance extends InstanceBase {
 		this.updateStatus('connecting');
 
 		// Get env variables from server
-		const { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } = await fetch('http://localhost:5173/supabaseEnv').then(res => res.json())
+		const { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } = await fetch('https://svelte5.webcomms.net/supabaseEnv').then(res => res.json())
 		this.supabase = supabase.createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY)
 
 		// Continue to config if intercom name is set else return bad config
-		if (this.config.intercomName.length > 0) {
+		if (this.config.intercomName !== '') {
 
 			// Get intercom config from supabase
 			this.supabaseIntercomConfig = await this.supabase.from('intercoms').select('*').eq('name', this.config.intercomName).single()
