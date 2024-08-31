@@ -1,3 +1,3 @@
-# companion-module-generic-osc
+# companion-module-webcomms-panel
 
 See HELP.md and LICENSE
