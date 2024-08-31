@@ -1,7 +1,7 @@
 {
 	"id": "webcomms-panel",
-	"name": "webcomms-panel",
-	"shortname": "webcomms",
+	"name": "WebComms Panel",
+	"shortname": "WebComms Panel",
 	"description": "Direct: WebComms plugin for Companion",
 	"version": "1.0.0",
 	"license": "MIT",
@@ -20,6 +20,7 @@
 		"entrypoint": "../panel.js"
 	},
 	"manufacturer": "WebComms",
-	"products": ["WebComms"],
-	"keywords": ["Intercom", "Comms"]
+	"products": ["WebComms Panel"],
+	"keywords": ["Intercom", "Comms"],
+	"legacyIds": ["webcomms-panel", "panel"]
 }
