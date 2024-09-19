@@ -106,7 +106,6 @@ class PanelInstance extends InstanceBase {
 
 			this.log('info', 'Configuring functions')
 			this.channel.on('broadcast', { event: this.config.companionIdentity }, (msg) => {
-				this.log('info', 'Message received')
 				switch (msg.payload.event) {
 					case 'talkStatusChange':
 						this.log('info', 'Talk status change event received')
