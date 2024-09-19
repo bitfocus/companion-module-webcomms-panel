@@ -132,7 +132,7 @@ class PanelInstance extends InstanceBase {
 						this.log('debug', JSON.stringify(msg.payload.state))
 						this.updateActions()
 						this.updateFeedbacks()
-						this.checkFeedbacks('talkActive', 'listenActive', 'volume')
+						this.checkFeedbacks('talkActive', 'listenActive')
 						this.updateVariableDefinitions()
 						this.updateStatus('ok')
 						break

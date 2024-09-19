@@ -71,40 +71,6 @@ module.exports = function (self) {
 			},
 		},
 
-		volume: {
-			type: 'advanced',
-			name: 'Volume',
-			id: 'volume',
-			defaultStyle: {
-				// The default style change for a boolean feedback
-				// The user will be able to customise these values as well as the fields that will be changed
-				bgcolor: combineRgb(0, 0, 255),
-				color: combineRgb(0, 0, 0),
-			},
-			// options is how the user can choose the condition the feedback activates for
-			options: [
-				{
-					type: 'dropdown',
-					label: 'Channel',
-					id: 'channel',
-					choices: self.channelChoices,
-				},
-			],
-			callback: (feedback, context) => {
-				self.log('info', 'Checking volume feedback')
 
-				if (
-					self.state === undefined ||
-					self.state[feedback.options.channel] === undefined ||
-					self.state[feedback.options.channel].volume === undefined
-				) {
-					self.log('warn', 'Volume state is undefined')
-					return false
-				}
-
-				self.log('info', 'Updating volume feedback')
-				return { text: String(self.state[feedback.options.channel].volume) }
-			},
-		},
 	})
 }

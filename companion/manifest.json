@@ -2,7 +2,7 @@
 	"id": "webcomms-panel",
 	"name": "Panel",
 	"shortname": "Panel",
-	"description": "Direct: WebComms plugin for Companion",
+	"description": "Direct: Web Comms plugin for Companion",
 	"version": "1.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-webcomms-panel.git",
