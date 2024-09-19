@@ -4,7 +4,9 @@
 	"main": "panel.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"format": "prettier -w ."
+		"format": "prettier -w .",
+		"build dev": "companion-module-build --dev",
+		"build": "companion-module-build"
 	},
 	"packageManager": "yarn@4.4.1",
 	"license": "MIT",

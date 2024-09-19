@@ -12,15 +12,19 @@ module.exports = function (self) {
             ],
             callback: async (event) => {
 
+                if (!self.intercomConfig.matrix[self.config.roleID].channels) {
+                    return
+                }
+
                 /**@type {companionEvent} changeObj */
                 const changeObj = {
                     type: 'broadcast',
                     event: self.config.companionIdentity,
                     payload: {
                         event: 'talkStatusChange',
-                        channelName: self.intercomConfig.matrix[self.config.role].channels[event.options.channel].channelName,
+                        channelName: self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].channelName,
                         channelID: event.options.channel,
-                        talking: !self.intercomConfig.matrix[self.config.role].channels[event.options.channel].talking
+                        talking: !self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].talking
                     }
                 }
 
@@ -28,7 +32,7 @@ module.exports = function (self) {
                     changeObj
                 )
 
-                self.intercomConfig.matrix[self.config.role].channels[event.options.channel].talking = !self.intercomConfig.matrix[self.config.role].channels[event.options.channel].talking
+                self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].talking = !self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].talking
 
             }
         },
@@ -44,19 +48,24 @@ module.exports = function (self) {
                 }
             ],
             callback: async (event) => {
+
+                if (!self.intercomConfig.matrix[self.config.roleID].channels) {
+                    return
+                }
+
                 /**@type {companionEvent} changeObj */
                 const changeObj = {
                     type: 'broadcast',
                     event: self.config.companionIdentity,
                     payload: {
                         event: 'listenStatusChange',
-                        channelName: self.intercomConfig.matrix[self.config.role].channels[event.options.channel].channelName,
+                        channelName: self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].channelName,
                         channelID: event.options.channel,
-                        listening: !self.intercomConfig.matrix[self.config.role].channels[event.options.channel].listenActive
+                        listening: !self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].listenActive
                     }
                 }
 
-                self.intercomConfig.matrix[self.config.role].channels[event.options.channel].listenActive = !self.intercomConfig.matrix[self.config.role].channels[event.options.channel].listenActive
+                self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].listenActive = !self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].listenActive
                 await self.channel.send(
                     changeObj
                 )
@@ -83,13 +92,18 @@ module.exports = function (self) {
                 }
             ],
             callback: async (event) => {
+
+                if (!self.intercomConfig.matrix[self.config.roleID].channels) {
+                    return
+                }
+                
                 /**@type {companionEvent} changeObj */
                 const changeObj = {
                     type: 'broadcast',
                     event: self.config.companionIdentity,
                     payload: {
                         event: 'volumeChange',
-                        channelName: self.intercomConfig.matrix[self.config.role].channels[event.options.channel].channelName,
+                        channelName: self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].channelName,
                         channelID: event.options.channel,
                         volume: event.options.volume
                     }
@@ -101,7 +115,7 @@ module.exports = function (self) {
                     event.options.volume = 0
                 }
 
-                self.intercomConfig.matrix[self.config.role].channels[event.options.channel].volume = event.options.volume
+                self.intercomConfig.matrix[self.config.roleID].channels[event.options.channel].volume = event.options.volume
                 await self.channel.send(
                     changeObj
                 )
