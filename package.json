@@ -6,7 +6,7 @@
 		"test": "echo \"Error: no test specified\" && exit 1",
 		"format": "prettier -w ."
 	},
-	"packageManager": "yarn@4.1.1",
+	"packageManager": "yarn@4.4.1",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -15,9 +15,9 @@
 	"prettier": "@companion-module/tools/.prettierrc.json",
 	"dependencies": {
 		"@companion-module/base": "^1.10.0",
-		"@supabase/supabase-js": "^2.45.3"
+		"@supabase/supabase-js": "^2.45.4"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.0.0"
+		"@companion-module/tools": "^2.0.3"
 	}
 }
