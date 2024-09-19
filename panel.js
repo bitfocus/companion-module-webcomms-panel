@@ -1,6 +1,10 @@
-const { InstanceBase, runEntrypoint, combineRgb } = require('@companion-module/base')
+const { InstanceBase, runEntrypoint } = require('@companion-module/base')
 const UpgradeScripts = require('./upgrades')
 const supabase = require('@supabase/supabase-js')
+
+const UpdateActions = require('./actions')
+const UpdateFeedbacks = require('./feedbacks')
+const UpdateVariableDefinitions = require('./variables')
 
 /**
 * @typedef {Object} companionEventPayload
@@ -29,7 +33,7 @@ class PanelInstance extends InstanceBase {
 		this.updateStatus('connecting');
 
 		// Get env variables from server
-		const { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } = await fetch('https://svelte5.webcomms.net/supabaseEnv').then(res => res.json())
+		const { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } = await fetch('https://www.webcomms.net/supabaseEnv').then(res => res.json())
 		this.supabase = supabase.createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY)
 
 		// Continue to config if intercom name is set else return bad config
@@ -73,6 +77,7 @@ class PanelInstance extends InstanceBase {
 			this.channel = this.supabase.channel(this.config.intercomName)
 
 			this.channel.on('broadcast', { event: this.config.companionIdentity }, (msg) => {
+				this.log('info', "Message received")
 				switch (msg.payload.event) {
 					case "talkStatusChange":
 						this.log('info', "Talk status change event received")
@@ -114,7 +119,7 @@ class PanelInstance extends InstanceBase {
 			return
 		}
 
-		
+
 		if (!this.config.role !== undefined) {
 
 			await this.channel.send({
@@ -175,196 +180,15 @@ class PanelInstance extends InstanceBase {
 	}
 
 	updateActions() {
-		this.setActionDefinitions({
-			activateTalk: {
-				name: 'Toggle talk on a channel',
-				options: [
-					{
-						type: 'dropdown',
-						label: "Channel",
-						id: "channel",
-						choices: this.channelChoices
-					}
-				],
-				callback: async (event) => {
-
-					/**@type {companionEvent} changeObj */
-					const changeObj = {
-						type: 'broadcast',
-						event: this.config.companionIdentity,
-						payload: {
-							event: 'talkStatusChange',
-							channelName: this.intercomConfig.matrix[this.config.role].channels[event.options.channel].channelName,
-							channelID: event.options.channel,
-							talking: !this.intercomConfig.matrix[this.config.role].channels[event.options.channel].talking
-						}
-					}
-
-					await this.channel.send(
-						changeObj
-					)
-
-					this.intercomConfig.matrix[this.config.role].channels[event.options.channel].talking = !this.intercomConfig.matrix[this.config.role].channels[event.options.channel].talking
-
-				}
-			},
-
-			activateListen: {
-				name: 'Toggle listen on a channel',
-				options: [
-					{
-						type: 'dropdown',
-						label: "Channel",
-						id: "channel",
-						choices: this.channelChoices
-					}
-				],
-				callback: async (event) => {
-					/**@type {companionEvent} changeObj */
-					const changeObj = {
-						type: 'broadcast',
-						event: this.config.companionIdentity,
-						payload: {
-							event: 'listenStatusChange',
-							channelName: this.intercomConfig.matrix[this.config.role].channels[event.options.channel].channelName,
-							channelID: event.options.channel,
-							listening: !this.intercomConfig.matrix[this.config.role].channels[event.options.channel].listenActive
-						}
-					}
-
-					this.intercomConfig.matrix[this.config.role].channels[event.options.channel].listenActive = !this.intercomConfig.matrix[this.config.role].channels[event.options.channel].listenActive
-					await this.channel.send(
-						changeObj
-					)
-				}
-			},
-
-			setVolume: {
-				name: 'Set volume on a channel',
-				options: [
-					{
-						type: 'dropdown',
-						label: "Channel",
-						id: "channel",
-						choices: this.channelChoices
-					},
-					{
-						type: 'number',
-						label: "Volume",
-						id: "volume",
-						default: 100,
-						min: 0,
-						max: 100,
-						step: 1
-					}
-				],
-				callback: async (event) => {
-					/**@type {companionEvent} changeObj */
-					const changeObj = {
-						type: 'broadcast',
-						event: this.config.companionIdentity,
-						payload: {
-							event: 'volumeChange',
-							channelName: this.intercomConfig.matrix[this.config.role].channels[event.options.channel].channelName,
-							channelID: event.options.channel,
-							volume: event.options.volume
-						}
-					}
-
-					if (event.options.volume > 100) {
-						event.options.volume = 100
-					} else if (event.options.volume < 0) {
-						event.options.volume = 0
-					}
-
-					this.intercomConfig.matrix[this.config.role].channels[event.options.channel].volume = event.options.volume
-					await this.channel.send(
-						changeObj
-					)
-				}
-			},
-
-
-		})
+		UpdateActions(this)
 	}
 
 	updateFeedbacks() {
-		this.setFeedbackDefinitions({
-			talkActive: {
-				type: 'boolean',
-				name: 'Talking Status',
-				id: 'talkActive',
-				defaultStyle: {
-					// The default style change for a boolean feedback
-					// The user will be able to customise these values as well as the fields that will be changed
-					bgcolor: combineRgb(255, 0, 0),
-					color: combineRgb(0, 0, 0),
-				},
-				// options is how the user can choose the condition the feedback activates for
-				options: [{
-					type: 'dropdown',
-					label: 'Channel',
-					id: 'channel',
-					choices: this.channelChoices
-				}],
-				callback: (feedback) => {
-					console.log("Checking talk feedback", feedback.controlId)
-					if (this.status !== undefined) {
-						return this.status[feedback.options.channel].talking
-					}
-				}
-			},
-			listenActive: {
-				type: 'boolean',
-				name: 'Listening Status',
-				id: 'listenActive',
-				defaultStyle: {
-					// The default style change for a boolean feedback
-					// The user will be able to customise these values as well as the fields that will be changed
-					bgcolor: combineRgb(0, 255, 0),
-					color: combineRgb(0, 0, 0),
-				},
-				// options is how the user can choose the condition the feedback activates for
-				options: [{
-					type: 'dropdown',
-					label: 'Channel',
-					id: 'channel',
-					choices: this.channelChoices
-				}],
-				callback: (feedback) => {
-					console.log("Checking listen feedback", feedback.controlId)
-					if (this.status !== undefined) {
-						return this.status[feedback.options.channel].listening
-					}
-				}
-			},
+		UpdateFeedbacks(this)
+	}
 
-			volume: {
-				type: 'advanced',
-				name: 'Volume',
-				id: 'volume',
-				defaultStyle: {
-					// The default style change for a boolean feedback
-					// The user will be able to customise these values as well as the fields that will be changed
-					bgcolor: combineRgb(0, 0, 255),
-					color: combineRgb(0, 0, 0),
-				},
-				// options is how the user can choose the condition the feedback activates for
-				options: [{
-					type: 'dropdown',
-					label: 'Channel',
-					id: 'channel',
-					choices: this.channelChoices
-				}],
-				callback: (feedback, context) => {
-					console.log("Checking volume feedback", feedback.controlId)
-					console.log('Context', JSON.stringify(context))
-					if (this.status !== undefined) {
-						return {text: String(this.status[feedback.options.channel].volume)}
-					}
-				}
-			},
-		})
+	updateVariableDefinitions() {
+		UpdateVariableDefinitions(this)
 	}
 }
 
