@@ -45,41 +45,6 @@ class PanelInstance extends InstanceBase {
 		this.supabase = supabase.createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY)
 		this.log('debug', 'Created supabase client')
 
-		// Continue to config if intercom name is set else return bad config
-		if (this.config.intercomName !== '') {
-			// Get intercom config from supabase
-			this.log('info', 'Attempting to fetch intercom configuration')
-			this.supabaseIntercomConfig = await this.supabase
-				.from('intercoms')
-				.select('*')
-				.eq('name', this.config.intercomName)
-				.single()
-			if (this.supabaseIntercomConfig.error && this.supabaseIntercomConfig.error.code === 'PGRST116') {
-				this.log('error', 'Intercom not found')
-				this.log('error', JSON.stringify(this.supabaseIntercomConfig))
-				this.updateStatus('bad_config', 'Intercom not found')
-				return
-			}
-
-			this.intercomConfig = this.supabaseIntercomConfig.data.config.config
-			this.log('info', 'Intercom configuration fetched and loaded')
-
-			// Set up channel choices
-			this.intercomConfig.channels.map((ch, index) => {
-				this.channelChoices.push({ id: index, label: ch })
-			})
-			this.log('info', 'Channel choices set')
-
-			// Set up role choices
-			this.intercomConfig.roles.map((role, index) => {
-				this.roleChoices.push({ id: index, label: role })
-			})
-			this.log('info', 'Role choices set')
-		} else {
-			this.updateStatus('bad_config', 'Intercom name not set')
-			return
-		}
-
 		// Check if user ID is set
 		if (this.config.companionIdentity !== '') {
 			const userExists = await this.supabase
@@ -90,12 +55,12 @@ class PanelInstance extends InstanceBase {
 			if (userExists.error && userExists.error.code === 'PGRST116') {
 				this.log('error', 'Companion ID not found')
 				this.log('error', JSON.stringify(userExists))
-				this.updateStatus('bad_config', 'Companion ID not found')
+				this.updateStatus('bad_config', 'Companion Identity not found')
 				return
 			} else if (userExists.error && userExists.error.code === '22P02') {
 				this.log('error', 'Invalid User ID')
 				this.log('error', JSON.stringify(userExists))
-				this.updateStatus('bad_config', 'Invalid User ID')
+				this.updateStatus('bad_config', 'Invalid Companion Identity')
 				return
 			} else if (userExists.data) {
 				this.log('info', 'Companion ID found')
@@ -148,7 +113,42 @@ class PanelInstance extends InstanceBase {
 			this.log('info', 'Listening to intercom')
 			this.channel.subscribe()
 		} else {
-			this.updateStatus('bad_config', 'User ID not set')
+			this.updateStatus('bad_config', 'Companion Identity is not set')
+			return
+		}
+
+		// Continue to config if intercom name is set else return bad config
+		if (this.config.intercomName !== '') {
+			// Get intercom config from supabase
+			this.log('info', 'Attempting to fetch intercom configuration')
+			this.supabaseIntercomConfig = await this.supabase
+				.from('intercoms')
+				.select('*')
+				.eq('name', this.config.intercomName)
+				.single()
+			if (this.supabaseIntercomConfig.error && this.supabaseIntercomConfig.error.code === 'PGRST116') {
+				this.log('error', 'Intercom not found')
+				this.log('error', JSON.stringify(this.supabaseIntercomConfig))
+				this.updateStatus('bad_config', 'Intercom not found')
+				return
+			}
+
+			this.intercomConfig = this.supabaseIntercomConfig.data.config.config
+			this.log('info', 'Intercom configuration fetched and loaded')
+
+			// Set up channel choices
+			this.intercomConfig.channels.map((ch, index) => {
+				this.channelChoices.push({ id: index, label: ch })
+			})
+			this.log('info', 'Channel choices set')
+
+			// Set up role choices
+			this.intercomConfig.roles.map((role, index) => {
+				this.roleChoices.push({ id: index, label: role })
+			})
+			this.log('info', 'Role choices set')
+		} else {
+			this.updateStatus('bad_config', 'Intercom name not set')
 			return
 		}
 
