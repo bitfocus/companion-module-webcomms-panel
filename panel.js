@@ -198,6 +198,13 @@ class PanelInstance extends InstanceBase {
 				default: '',
 			},
 			{
+				type: 'static-text',
+				id: 'roleInstructions',
+				width: 12,
+				label: 'Selecting your Role',
+				value: 'Role options will populate once the Companion Identity and Intercom Name are set and saved',
+			},
+			{
 				type: 'dropdown',
 				id: 'roleID',
 				label: 'Role',
