@@ -1,6 +1,6 @@
 {
 	"name": "webcomms-panel",
-	"version": "1.0.2",
+	"version": "1.0.4",
 	"main": "panel.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
@@ -16,10 +16,10 @@
 	},
 	"prettier": "@companion-module/tools/.prettierrc.json",
 	"dependencies": {
-		"@companion-module/base": "^1.10.0",
-		"@supabase/supabase-js": "^2.45.4"
+		"@companion-module/base": "^1.11.3",
+		"@supabase/supabase-js": "^2.48.0"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "^2.0.3"
+		"@companion-module/tools": "^2.1.1"
 	}
 }

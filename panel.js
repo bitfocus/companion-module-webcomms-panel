@@ -33,18 +33,16 @@ class PanelInstance extends InstanceBase {
 		this.roleChoices = []
 		this.state = {}
 		this.updateStatus('connecting')
-
+		
 		// Get env variables from server
-		const { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } = await fetch('https://www.webcomms.net/supabaseEnv').then(
-			(res) => res.json()
-		)
+		const { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } = await fetch('https://www.webcomms.net/supabaseEnv').then((res) => res.json())
 		this.log('debug', 'Received env variables from server')
 		this.log('debug', PUBLIC_SUPABASE_URL)
 		this.log('debug', PUBLIC_SUPABASE_KEY)
-
+		
 		this.supabase = supabase.createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY)
 		this.log('debug', 'Created supabase client')
-
+		
 		// Check if user ID is set
 		if (this.config.companionIdentity !== '') {
 			const userExists = await this.supabase
