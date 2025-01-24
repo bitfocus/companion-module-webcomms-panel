@@ -3,7 +3,7 @@
 	"name": "Web-Comms-Panel",
 	"shortname": "Web-Comms-Panel",
 	"description": "Direct: Web Comms plugin for Companion",
-	"version": "1.0.2",
+	"version": "1.0.5",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-webcomms-panel.git",
 	"bugs": "https://github.com/bitfocus/companion-module-webcomms-panel/issues",
@@ -22,5 +22,5 @@
 	"manufacturer": "Web Comms",
 	"products": ["Panel"],
 	"keywords": ["Intercom", "Comms"],
-	"legacyIds": ["webcomms-panel", "panel"]
+	"legacyIds": []
 }
