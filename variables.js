@@ -1,23 +1,30 @@
 module.exports = function (self) {
-	if (Object.keys(self.state).length === 0) {
+    if (!self.config.roleId) {
         self.setVariableDefinitions([])
-	} else {
-        self.setVariableDefinitions(
-            Object.keys(self.state).map((key, index) => {
-                return {
-                    variableId: 'volume' + index,
-                    name: self.state[key].channelName + " Volume",
-                    variableType: 'number'
-                }
-            })
-        )
-
-        const values = {}
-
-        Object.keys(self.state).forEach((key, index) => {
-            values['volume' + index] = self.state[key].volume
-        })
-
-        self.setVariableValues(values)
     }
+
+    const role = self.intercomConfig.matrix[self.config.roleId]
+
+    if (!role || !self.intercomConfig) {
+        self.setVariableDefinitions([])
+    }
+
+    self.setVariableDefinitions(
+        Object.values(role.channels).map((channel, index) => {
+            return {
+                variableId: channel.templateChannel.channelName.replaceAll(' ', '_'),
+                name: channel.templateChannel.channelName,
+                variableType: 'number'
+            }
+        })
+    )
+
+    let variableValues = {}
+
+    Object.values(role.channels).forEach((channel, index) => {
+        variableValues[channel.templateChannel.channelName.replaceAll(' ', '_')] = channel.volume
+
+    })
+
+    self.setVariableValues(variableValues)
 }

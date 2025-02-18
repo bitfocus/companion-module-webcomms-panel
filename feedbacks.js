@@ -25,15 +25,16 @@ module.exports = function (self) {
 				self.log('info', 'Checking talk feedback')
 				if (
 					self.state === undefined ||
-					self.state[feedback.options.channel] === undefined ||
-					self.state[feedback.options.channel].talking === undefined
+					self.state.channels === undefined ||
+					self.state.channels[feedback.options.channel] === undefined ||
+					self.state.channels[feedback.options.channel].talkActive === undefined
 				) {
 					self.log('warn', 'Talking state is undefined')
 					return false
 				}
 
                 self.log('info', "Updating talking feedback")
-				return self.state[feedback.options.channel].talking
+				return self.state.channels[feedback.options.channel].talkActive
 			},
 		},
 		listenActive: {
@@ -59,15 +60,16 @@ module.exports = function (self) {
 				self.log('info', 'Checking listen feedback')
 				if (
 					self.state === undefined ||
-					self.state[feedback.options.channel] === undefined ||
-					self.state[feedback.options.channel].listening === undefined
+					self.state.channels === undefined ||
+					self.state.channels[feedback.options.channel] === undefined ||
+					self.state.channels[feedback.options.channel].listenActive === undefined
 				) {
 					self.log('warn', 'Listen state is undefined')
 					return false
 				}
 
 				self.log('info', 'Updating listen feedback')
-				return self.state[feedback.options.channel].listening
+				return self.state.channels[feedback.options.channel].listenActive
 			},
 		},
 

@@ -66,25 +66,22 @@ class PanelInstance extends InstanceBase {
 		this.supabase = supabase.createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY)
 		this.log('debug', 'Created supabase client')
 
+		this.companionSyncTimeout;
+
 		// Check if user ID is set
 		if (this.config.companionIdentity !== '') {
 			const userExists = await this.supabase
-				.from('companion_ids')
-				.select('companion_id')
-				.eq('companion_id', this.config.companionIdentity)
-				.single()
-			if (userExists.error && userExists.error.code === 'PGRST116') {
-				this.log('error', 'Companion ID not found')
-				this.log('error', JSON.stringify(userExists))
-				this.updateStatus('bad_config', 'Companion Identity not found')
-				return
-			} else if (userExists.error && userExists.error.code === '22P02') {
-				this.log('error', 'Invalid User ID')
-				this.log('error', JSON.stringify(userExists))
-				this.updateStatus('bad_config', 'Invalid Companion Identity')
+				.rpc('check_companion_id_exists', { input_companion_id: this.config.companionIdentity })
+			if (userExists.error) {
+				this.log('error', userExists.error.message)
+				this.updateStatus('bad_config', userExists.error.message)
 				return
 			} else if (userExists.data) {
 				this.log('info', 'Companion ID found')
+			} else if (!userExists.data) {
+				this.log('error', 'Companion ID not found')
+				this.updateStatus('bad_config', 'Companion Identity not found')
+				return
 			}
 
 			this.log('info', 'Connecting to intercom')
@@ -93,7 +90,7 @@ class PanelInstance extends InstanceBase {
 			this.log('info', 'Configuring functions')
 
 
-			this.channel.on('broadcast', { event: this.config.companionIdentity }, this.handleSupabaseBroadcast)
+			this.channel.on('broadcast', { event: this.config.companionIdentity }, (companionEventPayload) => this.handleSupabaseBroadcast(companionEventPayload))
 
 			this.log('info', 'Listening to intercom')
 			this.channel.subscribe()
@@ -150,24 +147,13 @@ class PanelInstance extends InstanceBase {
 			return
 		}
 
-		if (!this.config.roleID !== undefined) {
-			this.log('info', 'Sending companion sync request')
-			await this.channel.send({
-				type: 'broadcast',
-				event: this.config.companionIdentity,
-				payload: {
-					event: 'companionSyncRequest',
-					roleID: this.config.roleID,
-				},
-			})
-		} else {
-			this.updateStatus('bad_config', 'Role not set')
-		}
 
 		this.updateStatus('Syncing')
+		await this.requestCompanionSync()
 		this.updateActions() // export actions
 		this.updateFeedbacks()
 		this.updateVariableDefinitions()
+		this.updateStatus('ok')
 	}
 	// When module gets deleted
 	async destroy() {
@@ -204,7 +190,7 @@ class PanelInstance extends InstanceBase {
 			},
 			{
 				type: 'dropdown',
-				id: 'roleID',
+				id: 'roleId',
 				label: 'Role',
 				width: 12,
 				default: 0,
@@ -213,39 +199,44 @@ class PanelInstance extends InstanceBase {
 		]
 	}
 
-	/**
-	 * 
-	 * @param {CompanionEventPayload} broadcastEvent 
-	 */
-	handleSupabaseBroadcast(broadcastEvent) {
-		this.log('warn', broadcastEvent)
+	async handleSupabaseBroadcast(broadcastEvent) {
+		this.log('info', 'Handling broadcast event: ' + JSON.stringify(broadcastEvent))
+		if (!this.state.channels && !['companionSyncResponse', 'companionSyncRequest'].includes(broadcastEvent.payload.event) && !this.companionSyncTimeout) {
+			this.log('info', 'Broadcast event is not a companion sync response, requesting companion sync')
+			this.requestCompanionSync();
+
+		}
+
 		switch (broadcastEvent.payload.event) {
 			case 'talkStatusChange':
-				this.log('info', 'Talk status change event received')
-				this.state[broadcastEvent.payload.channelID].talking = broadcastEvent.payload.talking
+				this.log('info', 'Talk status change event received: ' + JSON.stringify(broadcastEvent))
+				this.state.channels[broadcastEvent.payload.state.templateChannel.channelId] = broadcastEvent.payload.state
 				this.checkFeedbacks('talkActive')
 				break
 
 			case 'listenStatusChange':
 				this.log('info', 'Listen status change event received')
-				this.state[broadcastEvent.payload.channelID].listening = broadcastEvent.payload.listening
+				this.state.channels[broadcastEvent.payload.state.templateChannel.channelId] = broadcastEvent.payload.state
 				this.checkFeedbacks('listenActive')
 				break
 
 			case 'volumeChange':
 				this.log('info', 'Volume change event received')
-				this.state[broadcastEvent.payload.channelID].volume = broadcastEvent.payload.volume
-				this.setVariableValues({ ['volume' + broadcastEvent.payload.channelID]: broadcastEvent.payload.volume })
+				this.state.channels[broadcastEvent.payload.state.templateChannel.channelId] = broadcastEvent.payload.state
+				this.setVariableValues({ [broadcastEvent.payload.state.templateChannel.channelName.replaceAll(' ', '_')]: broadcastEvent.payload.state.volume })
+				this.checkFeedbacks('listenActive')
 				break
 
 			case 'companionSyncResponse':
 				this.log('info', 'Companion sync response received')
+				this.log('debug', JSON.stringify(broadcastEvent))
+				this.updateStatus('Syncing')
 				this.state = broadcastEvent.payload.state
-				this.log('debug', JSON.stringify(broadcastEvent.payload.state))
 				this.updateActions()
 				this.updateFeedbacks()
 				this.checkFeedbacks('talkActive', 'listenActive')
 				this.updateVariableDefinitions()
+				clearTimeout(this.companionSyncTimeout)
 				this.updateStatus('ok')
 				break
 
@@ -255,6 +246,29 @@ class PanelInstance extends InstanceBase {
 			default:
 				this.log('info', 'Unknown event received: ' + broadcastEvent.payload.event)
 				break
+		}
+	}
+
+	async requestCompanionSync() {
+		if (!this.config.roleId !== undefined) {
+			this.log('info', 'Sending companion sync request: ' + JSON.stringify(this.config))
+			await this.channel.send({
+				type: 'broadcast',
+				event: this.config.companionIdentity,
+				payload: {
+					event: 'companionSyncRequest',
+					roleId: this.config.roleId,
+				},
+			})
+
+			this.companionSyncTimeout = setTimeout(async () => {
+				if (this.state.channels === undefined) {
+					this.log('info', 'Companion sync timed out, trying again')
+					await this.requestCompanionSync()
+				}
+			}, 10000)
+		} else {
+			this.updateStatus('bad_config', 'Role not set')
 		}
 	}
 
