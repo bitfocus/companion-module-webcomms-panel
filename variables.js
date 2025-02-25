@@ -5,8 +5,9 @@ module.exports = function (self) {
 
     const role = self.intercomConfig.matrix[self.config.roleId]
 
-    if (!role || !self.intercomConfig) {
+    if (!role || !self.intercomConfig || !role.channels) {
         self.setVariableDefinitions([])
+        return
     }
 
     self.setVariableDefinitions(
@@ -25,6 +26,9 @@ module.exports = function (self) {
         variableValues[channel.templateChannel.channelName.replaceAll(' ', '_')] = channel.volume
 
     })
+
+
+
 
     self.setVariableValues(variableValues)
 }
