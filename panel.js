@@ -207,7 +207,7 @@ class PanelInstance extends InstanceBase {
 
 		}
 
-		if (broadcastEvent.payload.event !== 'companionSyncResponse' && broadcastEvent.payload.state.templateChannel === undefined) {
+		if (broadcastEvent.payload.event !== 'companionSyncResponse' && !broadcastEvent.payload.state?.templateChannel) {
 			this.log('error', 'Template channel not found: ' + JSON.stringify(broadcastEvent))
 			return;
 		}
