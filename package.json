@@ -1,6 +1,6 @@
 {
-	"name": "your-module-name",
-	"version": "0.1.0",
+	"name": "webcomms-panel",
+	"version": "1.0.11",
 	"main": "dist/main.js",
 	"type": "module",
 	"scripts": {
@@ -23,7 +23,8 @@
 		"yarn": "^4"
 	},
 	"dependencies": {
-		"@companion-module/base": "~1.11.3"
+		"@companion-module/base": "^1.12.0",
+		"@supabase/supabase-js": "^2.49.8"
 	},
 	"devDependencies": {
 		"@companion-module/tools": "^2.3.0",

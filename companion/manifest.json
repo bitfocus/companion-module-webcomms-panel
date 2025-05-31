@@ -1,16 +1,16 @@
 {
-	"id": "your-module-name",
-	"name": "your-module-name",
-	"shortname": "module-shortname",
-	"description": "A short one line description of your module",
-	"version": "0.0.0",
+	"id": "webcomms-panel",
+	"name": "Web-Comms-Panel",
+	"shortname": "Web-Comms-Panel",
+	"description": "Direct: Web Comms plugin for Companion",
+	"version": "1.0.11",
 	"license": "MIT",
-	"repository": "git+https://github.com/bitfocus/companion-module-your-module-name.git",
-	"bugs": "https://github.com/bitfocus/companion-module-your-module-name/issues",
+	"repository": "git+https://github.com/bitfocus/companion-module-webcomms-panel.git",
+	"bugs": "https://github.com/bitfocus/companion-module-webcomms-panel/issues",
 	"maintainers": [
 		{
-			"name": "Your name",
-			"email": "Your email"
+			"name": "George Patchett",
+			"email": "george.patchett@gmail.com"
 		}
 	],
 	"runtime": {
@@ -19,8 +19,8 @@
 		"apiVersion": "0.0.0",
 		"entrypoint": "../dist/main.js"
 	},
-	"legacyIds": [],
-	"manufacturer": "Your company",
-	"products": ["Your product"],
-	"keywords": []
+	"manufacturer": "Web Comms",
+	"products": ["Panel"],
+	"keywords": ["Intercom", "Comms"],
+	"legacyIds": []
 }
