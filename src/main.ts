@@ -91,7 +91,8 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	}
 
 	async configUpdated(config: ModuleConfig): Promise<void> {
-		this.config = config
+		this.state = undefined // Reset state on config update
+		await this.init(config)
 	}
 
 	// Return config fields for web config
