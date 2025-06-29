@@ -10,40 +10,25 @@ export interface ChannelChoice {
 	label: string
 }
 
+export interface PGMChoice {
+	id: string
+	label: string
+}
+
 export interface RoleChoice {
 	id: string
 	label: string
 }
 
-export interface TemplateChannel {
-	channelId: string
-	channelName: string
-}
-
-export interface Channel {
-	templateChannel: TemplateChannel
-	localPermissions: 'disabled' | 'listenOnly' | 'talkOnly' | 'duplex'
-	talkActivity: boolean
-	volume: number
-	listenActive: boolean
-	talkActive: boolean
-}
-
 interface PayloadMap {
-	talkStatusChange: Channel
-	channelActivityStatusChange: Channel
-	listenStatusChange: Channel
-	volumeChange: Channel
+	talkStatusChange: RoleChannel
+	channelActivityStatusChange: RoleChannel
+	listenStatusChange: RoleChannel
+	channelVolumeChange: RoleChannel
+	pgmVolumeChange: RolePGM
+	pgmHiddenChange: RolePGM
 	companionSyncResponse: Role
 	companionSyncRequest?: undefined
-}
-
-export interface Role {
-	id: string
-	name: string
-	orderIndex: number
-	channels: Record<string, Channel>
-	pgmFeeds: Record<string, PgmFeed>
 }
 
 export type IntercomDataChannelBroadcast<T extends keyof PayloadMap = keyof PayloadMap> = {
@@ -52,4 +37,89 @@ export type IntercomDataChannelBroadcast<T extends keyof PayloadMap = keyof Payl
 	intercomEvent: T
 } & {
 	payload: T extends 'companionSyncRequest' ? PayloadMap[T] | undefined : PayloadMap[T]
+}
+
+export type IntercomConfigWithRelations = QueryData<
+	Database['public']['Tables']['intercoms']['Row'] & {
+		channels: Database['public']['Tables']['channels']['Row'][]
+		pgms: Database['public']['Tables']['pgms']['Row'][]
+		roles: Database['public']['Tables']['roles']['Row'][]
+	}
+>
+
+export type CompanionEventResponsePayload = {
+	event: string
+	state: Channel
+	roleId?: string
+}
+
+export type CompanionEventRequestPayload = {
+	event: string
+	channelId: string
+	talking?: boolean
+	listening?: boolean
+	volume?: number
+	roleId?: string
+}
+
+export type DatabaseChannel = {
+	id: string
+	name: string
+	orderIndex: number
+	intercom?: number
+	sendTrackId?: string
+	remoteIntercomParticipants?: Record<string, RemoteIntercomParticipant>
+}
+
+export interface Channel extends DatabaseChannel {
+	sendTrackId?: string
+	remoteIntercomParticipants: Record<string, RemoteIntercomParticipant>
+}
+
+export type RoleChannel = {
+	id: string
+	localPermissions: 'disabled' | 'listenOnly' | 'talkOnly' | 'duplex'
+	talkActivity: boolean
+	volume: number
+	listenActive: boolean
+	talkActive: boolean
+}
+
+export type DatabasePGM = {
+	id: string
+	name: string
+	orderIndex: number
+	intercom?: number
+	enableTranscoding: boolean
+	ingress: IngressInfo | object
+}
+
+export interface PGM extends DatabasePGM {
+	trackIDs: Array<string>
+}
+
+export type RolePGM = {
+	id: string
+	localPermissions: 'active' | 'disabled'
+	hidden: boolean
+	volume: number
+}
+
+export type RemoteIntercomParticipant = {
+	userId: string
+	userName: string
+	talking: boolean
+	listening: boolean
+	volume: number
+	trackId?: string
+	remotePermissions: 'disabled' | 'listenOnly' | 'talkOnly' | 'duplex'
+}
+
+export type Role = {
+	id: string
+	name: string
+	orderIndex: number
+	intercom?: number
+	channels: RoleChannel[]
+	pgms: RolePGM[]
 }

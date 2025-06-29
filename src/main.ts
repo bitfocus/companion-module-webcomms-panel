@@ -15,11 +15,15 @@ import { UpdateFeedbacks } from './feedbacks.js'
 import type {
 	Channel,
 	ChannelChoice,
+	PGM,
+	PGMChoice,
 	IntercomDataChannelBroadcast,
 	Role,
 	RoleChoice,
 	SupabaseEnvVars,
-	TemplateChannel,
+	IntercomConfigWithRelations,
+	RoleChannel,
+	RolePGM,
 } from './types.d.ts'
 import type { Database } from './supabase.js'
 import { createClient, RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js'
@@ -28,11 +32,12 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	config!: ModuleConfig // Setup in init()
 
 	channelChoices: ChannelChoice[] = []
+	pgmChoices: PGMChoice[] = []
 	roleChoices: RoleChoice[] = []
 	state: Role | undefined
 
 	supabase: SupabaseClient<Database> | undefined
-	supabaseIntercomConfig: Database['public']['Tables']['intercomsv2']['Row'] | undefined
+	supabaseIntercomConfig: IntercomConfigWithRelations | undefined
 	intercomDataChannel: RealtimeChannel | undefined
 
 	companionSyncTimeout: NodeJS.Timeout | undefined
@@ -65,7 +70,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 		/** Get intercom config from supabase */
 		this.supabaseIntercomConfig = await this.getSupabaseIntercomConfig()
-		if (!this.supabaseIntercomConfig) {
+		if (this.supabaseIntercomConfig === undefined) {
 			this.updateStatus(InstanceStatus.BadConfig, 'Intercom config not found')
 			return
 		}
@@ -77,13 +82,15 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.intercomDataChannel
 			.on('broadcast', { event: this.config.companionIdentity }, (companionEventPayload) => {
 				const payload = companionEventPayload as IntercomDataChannelBroadcast
-				this.handleDataChannelBroadcast(payload).catch((error) => {
-					this.log('error', error)
+				this.handleDataChannelBroadcast(payload).catch((e) => {
+					this.log('error', e)
 				})
 			})
 			.subscribe()
 
 		await this.requestCompanionSync()
+
+		this.updateStatus(InstanceStatus.Ok)
 	}
 	// When module gets deleted
 	async destroy(): Promise<void> {
@@ -142,15 +149,15 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		return false
 	}
 
-	async getSupabaseIntercomConfig(): Promise<Database['public']['Tables']['intercomsv2']['Row'] | undefined> {
+	async getSupabaseIntercomConfig(): Promise<IntercomConfigWithRelations | undefined> {
 		if (!this.supabase) {
 			this.log('error', 'Supabase client not found')
 			return
 		}
 		this.log('info', 'Attempting to fetch intercom configuration')
 		const { data: intercomConfig, error } = await this.supabase
-			.from('intercomsv2')
-			.select('*')
+			.from('intercoms')
+			.select('*, channels(*), pgms(*), roles(*)')
 			.eq('name', this.config.intercomName)
 			.single()
 
@@ -158,34 +165,31 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 			this.log('error', error.message)
 			this.updateStatus(InstanceStatus.BadConfig, error.message)
 			return
+		} else if (!intercomConfig) {
+			return undefined
 		} else {
-			const typedIntercomConfig = intercomConfig as Database['public']['Tables']['intercomsv2']['Row']
-			this.channelChoices = Object.values(JSON.parse(JSON.stringify(typedIntercomConfig.templateChannels))).map(
-				(templateChannel) => {
-					const tempChannel = templateChannel as TemplateChannel
-					return {
-						id: tempChannel.channelId,
-						label: tempChannel.channelName,
-					}
-				},
-			)
+			this.log('info', JSON.stringify(intercomConfig))
+			this.channelChoices = Array.from(intercomConfig.channels).map((ch) => {
+				if (!ch.id || !ch.name) throw new Error('Channel id or name does not exist')
+				return { id: ch.id, label: ch.name }
+			})
 
 			this.channelChoices.sort((a, b) => {
 				return a.label.localeCompare(b.label)
 			})
 
-			this.setVariableDefinitions(
-				Object.values(JSON.parse(JSON.stringify(typedIntercomConfig.templateChannels))).map((channel) => {
-					const tempChannel = channel as TemplateChannel
-					return {
-						variableId: tempChannel.channelId,
-						name: tempChannel.channelName + ' Volume',
-						variableType: 'number',
-					}
-				}),
-			)
+			this.pgmChoices = Array.from(intercomConfig.pgms).map((pgm) => {
+				if (!pgm.id || !pgm.name) throw new Error('PGM id or name does not exist')
+				return { id: pgm.id, label: pgm.name }
+			})
 
-			return intercomConfig
+			this.pgmChoices.sort((a, b) => {
+				return a.label.localeCompare(b.label)
+			})
+
+			this.setVariableDefinitions(this.generateVariableDefinitions())
+
+			return intercomConfig as IntercomConfigWithRelations
 		}
 	}
 
@@ -195,9 +199,10 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 			case 'talkStatusChange': {
 				if (!this.state) return
 
-				const talkPayload = broadcastEvent.payload as Channel
+				const talkPayload = broadcastEvent.payload as RoleChannel
 
-				const channel = this.state.channels[talkPayload.templateChannel.channelId]
+				const channel = this.state.channels.find((ch) => ch.id === talkPayload.id)
+				if (!channel) return
 
 				channel.talkActive = talkPayload.talkActive
 
@@ -208,9 +213,9 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 			case 'listenStatusChange': {
 				if (!this.state) return
 
-				const listenPayload = broadcastEvent.payload as Channel
+				const listenPayload = broadcastEvent.payload as RoleChannel
 
-				const channel = this.state.channels[listenPayload.templateChannel.channelId]
+				const channel = this.state.channels.find((ch) => ch.id === listenPayload.id)
 				if (!channel) return
 
 				channel.listenActive = listenPayload.listenActive
@@ -224,8 +229,8 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 				this.log('warn', JSON.stringify(broadcastEvent))
 
-				const talkActivityStatusPayload = broadcastEvent.payload as Channel
-				const channel = this.state.channels[talkActivityStatusPayload.templateChannel.channelId]
+				const talkActivityStatusPayload = broadcastEvent.payload as RoleChannel
+				const channel = this.state.channels.find((ch) => ch.id === talkActivityStatusPayload.id)
 
 				if (!channel) return
 
@@ -235,17 +240,39 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 				break
 			}
 
-			case 'volumeChange': {
+			case 'channelVolumeChange': {
 				if (!this.state) return
 
-				const volumePayload = broadcastEvent.payload as Channel
+				const volumePayload = broadcastEvent.payload as RoleChannel
 
-				const channel = this.state.channels[volumePayload.templateChannel.channelId]
+				const channel = this.state.channels.find((ch) => ch.id === volumePayload.id)
 				if (!channel) return
 
 				channel.volume = volumePayload.volume
 
 				this.setVariableValues(this.generateVariableValues())
+				break
+			}
+
+			case 'pgmVolumeChange': {
+				if (!this.state) return
+				const volumePayload = broadcastEvent.payload as RolePGM
+				const rolePGM = this.state.pgms.find((pgm) => pgm.id === volumePayload.id)
+				if (!rolePGM) return
+				rolePGM.volume = volumePayload.volume
+
+				this.setVariableValues(this.generateVariableValues())
+				break
+			}
+
+			case 'pgmHiddenChange': {
+				if (!this.state) return
+				const payload = broadcastEvent.payload as RolePGM
+				const rolePGM = this.state.pgms.find((pgm) => pgm.id === payload.id)
+				if (!rolePGM) return
+				rolePGM.hidden = payload.hidden
+
+				this.checkFeedbacks('pgmHidden')
 				break
 			}
 
@@ -256,8 +283,8 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 				this.updateActions()
 				this.updateFeedbacks()
-				this.checkFeedbacks('talkStatus', 'listenStatus', 'volume')
-				this.log('info', 'generating variable definitions')
+				this.checkFeedbacks('talkStatus', 'listenStatus', 'channelActivity', 'pgmHidden')
+				this.log('debug', 'generating variable definitions')
 				this.updateVariableDefinitions()
 				this.setVariableValues(this.generateVariableValues())
 
@@ -303,49 +330,79 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 		if (!this.supabaseIntercomConfig || !this.state || !this.state.channels) {
 			return []
 		}
-		const variableDefinitions: CompanionVariableDefinition[] = Object.values(this.state.channels)
-			.map((channel): CompanionVariableDefinition | null => {
-				if (
-					!this.supabaseIntercomConfig ||
-					!this.supabaseIntercomConfig.templateChannels ||
-					!channel ||
-					!channel.templateChannel
-				) {
-					this.log('error', 'Invalid state')
-					this.log('error', JSON.stringify(channel))
-					return null
-				}
+		const variableDefinitions: CompanionVariableDefinition[] = []
 
-				const templateChannels = Object.values(this.supabaseIntercomConfig.templateChannels)
+		this.state.channels.forEach((channel) => {
+			if (!this.supabaseIntercomConfig || !this.supabaseIntercomConfig.channels || !channel) {
+				this.log('error', 'Invalid state')
+				this.log('error', JSON.stringify(channel))
+				return
+			}
 
-				// Type guard to ensure templateChannels is an object and not null
-				if (templateChannels.length > 0 && typeof templateChannels[0] === 'object') {
-					const templateChannel = templateChannels.find((ch) => ch.channelId === channel.templateChannel.channelId)
+			// Type guard to ensure templateChannels is an object and not null
+			if (this.supabaseIntercomConfig.channels && this.supabaseIntercomConfig.channels.length > 0) {
+				this.log('info', this.supabaseIntercomConfig.channels && this.supabaseIntercomConfig.channels.length > 0)
+				const globalChannel = this.supabaseIntercomConfig.channels.find((ch: Channel) => ch.id === channel.id)
+				this.log('info', JSON.stringify(channel))
 
-					return {
-						variableId: templateChannel.channelName.replaceAll(' ', '_') + '_volume',
-						name: templateChannel.channelName + ' Volume',
-					}
-				} else {
-					console.warn('templateChannels is not an object:', templateChannels)
-					return null
-				}
+				if (!globalChannel) return
+
+				variableDefinitions.push({
+					variableId: globalChannel.name.replaceAll(' ', '_') + '_volume',
+					name: globalChannel.name + ' Volume',
+				})
+			} else {
+				console.warn('templateChannels is not an object:', this.supabaseIntercomConfig.channels)
+				return
+			}
+		})
+
+		this.state.pgms.forEach((pgm) => {
+			if (!this.supabaseIntercomConfig || !this.state || !this.state.pgms) return
+
+			const globalPGM: PGM | undefined = this.supabaseIntercomConfig.pgms.find(
+				(globalPGM: PGM) => globalPGM.id === pgm.id,
+			)
+			if (!globalPGM) return
+
+			variableDefinitions.push({
+				variableId: globalPGM.name.replaceAll(' ', '_') + '_volume',
+				name: globalPGM.name + ' Volume',
 			})
-			.filter((channel): channel is CompanionVariableDefinition => channel !== null)
+			return
+		})
 
+		this.log('warn', 'vardefs')
+		this.log('warn', JSON.stringify(variableDefinitions))
 		return variableDefinitions
 	}
 
 	generateVariableValues(): CompanionVariableValues {
 		const variableValues: CompanionVariableValues = {}
 
-		if (!this.supabaseIntercomConfig || !this.state || !this.state.channels) {
+		if (!this.supabaseIntercomConfig || !this.state) {
 			return {}
 		}
 
-		Object.values(this.state.channels).forEach((channel) => {
-			variableValues[channel.templateChannel.channelName.replaceAll(' ', '_') + '_volume'] = channel.volume
-		})
+		if (this.state.channels && this.state.channels.length > 0) {
+			this.state.channels.forEach((channel) => {
+				const channelName = this.supabaseIntercomConfig.channels.find((ch: Channel) => ch.id === channel.id) as
+					| Channel
+					| undefined
+				if (!channelName) return
+				variableValues[channelName.name.replaceAll(' ', '_') + '_volume'] = channel.volume
+			})
+		}
+
+		if (this.state.pgms && this.state.pgms.length > 0) {
+			this.state.pgms.forEach((pgm) => {
+				const globalPGM: PGM | undefined = this.supabaseIntercomConfig.pgms.find(
+					(globalPGM: PGM) => globalPGM.id === pgm.id,
+				)
+				if (!globalPGM) return
+				variableValues[globalPGM.name.replaceAll(' ', '_') + '_volume'] = pgm.volume
+			})
+		}
 
 		return variableValues
 	}

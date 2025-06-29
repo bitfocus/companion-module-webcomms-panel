@@ -31,28 +31,38 @@ export type Database = {
 			channels: {
 				Row: {
 					id: string
-					intercom: number | null
+					intercom: number
 					name: string | null
-					orderindex: number | null
+					orderIndex: number | null
+					user: string | null
 				}
 				Insert: {
 					id?: string
-					intercom?: number | null
+					intercom: number
 					name?: string | null
-					orderindex?: number | null
+					orderIndex?: number | null
+					user?: string | null
 				}
 				Update: {
 					id?: string
-					intercom?: number | null
+					intercom?: number
 					name?: string | null
-					orderindex?: number | null
+					orderIndex?: number | null
+					user?: string | null
 				}
 				Relationships: [
 					{
 						foreignKeyName: 'channels_intercom_fkey'
 						columns: ['intercom']
 						isOneToOne: false
-						referencedRelation: 'intercomsv2'
+						referencedRelation: 'intercoms'
+						referencedColumns: ['id']
+					},
+					{
+						foreignKeyName: 'channels_user_fkey'
+						columns: ['user']
+						isOneToOne: false
+						referencedRelation: 'users'
 						referencedColumns: ['id']
 					},
 				]
@@ -92,6 +102,38 @@ export type Database = {
 					},
 				]
 			}
+			intercoms: {
+				Row: {
+					created_at: string
+					id: number
+					name: string
+					password: string | null
+					user: string | null
+				}
+				Insert: {
+					created_at?: string
+					id?: number
+					name: string
+					password?: string | null
+					user?: string | null
+				}
+				Update: {
+					created_at?: string
+					id?: number
+					name?: string
+					password?: string | null
+					user?: string | null
+				}
+				Relationships: [
+					{
+						foreignKeyName: 'intercoms_user_fkey'
+						columns: ['user']
+						isOneToOne: false
+						referencedRelation: 'users'
+						referencedColumns: ['id']
+					},
+				]
+			}
 			intercomsv2: {
 				Row: {
 					created_at: string
@@ -100,7 +142,6 @@ export type Database = {
 					name: string
 					password: string | null
 					templateChannels: Json | null
-					templatePGMFeeds: Json | null
 					user: string | null
 				}
 				Insert: {
@@ -110,7 +151,6 @@ export type Database = {
 					name: string
 					password?: string | null
 					templateChannels?: Json | null
-					templatePGMFeeds?: Json | null
 					user?: string | null
 				}
 				Update: {
@@ -120,7 +160,6 @@ export type Database = {
 					name?: string
 					password?: string | null
 					templateChannels?: Json | null
-					templatePGMFeeds?: Json | null
 					user?: string | null
 				}
 				Relationships: [
@@ -166,61 +205,92 @@ export type Database = {
 				}
 				Relationships: []
 			}
-			pgm_feeds: {
+			pgms: {
 				Row: {
 					id: string
-					ingressID: string | null
+					ingress: Json | null
 					intercom: number | null
 					name: string | null
-					orderindex: number | null
-					streamKey: string | null
-					url: string | null
+					orderIndex: number | null
+					user: string | null
 				}
 				Insert: {
-					id?: string
-					ingressID?: string | null
+					id: string
+					ingress?: Json | null
 					intercom?: number | null
 					name?: string | null
-					orderindex?: number | null
-					streamKey?: string | null
-					url?: string | null
+					orderIndex?: number | null
+					user?: string | null
 				}
 				Update: {
 					id?: string
-					ingressID?: string | null
+					ingress?: Json | null
 					intercom?: number | null
 					name?: string | null
-					orderindex?: number | null
-					streamKey?: string | null
-					url?: string | null
+					orderIndex?: number | null
+					user?: string | null
 				}
 				Relationships: [
 					{
 						foreignKeyName: 'pgm_feeds_intercom_fkey'
 						columns: ['intercom']
 						isOneToOne: false
-						referencedRelation: 'intercomsv2'
+						referencedRelation: 'intercoms'
+						referencedColumns: ['id']
+					},
+					{
+						foreignKeyName: 'pgm_feeds_user_fkey'
+						columns: ['user']
+						isOneToOne: false
+						referencedRelation: 'users'
 						referencedColumns: ['id']
 					},
 				]
 			}
 			roles: {
 				Row: {
-					created_at: string
+					channels: Json | null
 					id: string
+					intercom: number
 					name: string | null
+					orderIndex: number | null
+					pgms: Json | null
+					user: string | null
 				}
 				Insert: {
-					created_at?: string
+					channels?: Json | null
 					id: string
+					intercom: number
 					name?: string | null
+					orderIndex?: number | null
+					pgms?: Json | null
+					user?: string | null
 				}
 				Update: {
-					created_at?: string
+					channels?: Json | null
 					id?: string
+					intercom?: number
 					name?: string | null
+					orderIndex?: number | null
+					pgms?: Json | null
+					user?: string | null
 				}
-				Relationships: []
+				Relationships: [
+					{
+						foreignKeyName: 'roles_intercom_fkey'
+						columns: ['intercom']
+						isOneToOne: false
+						referencedRelation: 'intercoms'
+						referencedColumns: ['id']
+					},
+					{
+						foreignKeyName: 'roles_user_fkey'
+						columns: ['user']
+						isOneToOne: false
+						referencedRelation: 'users'
+						referencedColumns: ['id']
+					},
+				]
 			}
 			usage_statistics: {
 				Row: {
@@ -299,8 +369,16 @@ export type Database = {
 				Args: { input_companion_id: string }
 				Returns: boolean
 			}
+			check_intercom_id_exists: {
+				Args: { param_intercom_id: number }
+				Returns: boolean
+			}
 			check_intercom_name_exists: {
 				Args: { param_intercom_name: string }
+				Returns: boolean
+			}
+			check_user_subscription_status: {
+				Args: { user_id: string }
 				Returns: boolean
 			}
 		}

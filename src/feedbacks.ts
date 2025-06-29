@@ -26,19 +26,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const feedbackOptions = feedback.options as {
 					channel: string
 				}
-				self.log('info', 'Checking talk feedback')
-				if (
-					self.state === undefined ||
-					self.state.channels === undefined ||
-					self.state.channels[feedbackOptions.channel] === undefined ||
-					self.state.channels[feedbackOptions.channel].talkActive === undefined
-				) {
-					self.log('warn', 'Talking state is undefined')
-					return false
-				}
+
+				if (!self.state) return false
+
+				const channel = self.state.channels.find((ch) => ch.id === feedbackOptions.channel)
+				if (!channel) return false
 
 				self.log('info', 'Updating talking feedback')
-				return self.state.channels[feedbackOptions.channel].talkActive
+				return channel.talkActive
 			},
 		},
 		listenStatus: {
@@ -65,19 +60,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					channel: string
 				}
 
-				self.log('info', 'Checking listen feedback')
-				if (
-					self.state === undefined ||
-					self.state.channels === undefined ||
-					self.state.channels[feedbackOptions.channel] === undefined ||
-					self.state.channels[feedbackOptions.channel].listenActive === undefined
-				) {
-					self.log('warn', 'Listen state is undefined')
-					return false
-				}
+				if (!self.state) return false
+
+				const channel = self.state.channels.find((ch) => ch.id === feedbackOptions.channel)
+
+				if (!channel) return false
 
 				self.log('info', 'Updating listen feedback')
-				return self.state.channels[feedbackOptions.channel].listenActive
+				return channel.listenActive
 			},
 		},
 
@@ -102,19 +92,44 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					channel: string
 				}
 
-				self.log('info', 'Checking channel activity')
-				if (
-					self.state === undefined ||
-					self.state.channels === undefined ||
-					self.state.channels[feedbackOptions.channel] === undefined ||
-					self.state.channels[feedbackOptions.channel].talkActivity === undefined
-				) {
-					self.log('warn', 'Channel activity is undefined')
-					return false
-				}
+				if (!self.state) return false
+
+				const channel = self.state.channels.find((ch) => ch.id === feedbackOptions.channel)
+
+				if (!channel) return false
 
 				self.log('info', 'Updating channel activity')
-				return self.state.channels[feedbackOptions.channel].talkActivity
+				return channel.talkActivity
+			},
+		},
+		pgmHidden: {
+			name: 'PGM Hidden',
+			type: 'boolean',
+			defaultStyle: {
+				bgcolor: combineRgb(71, 85, 105),
+				color: combineRgb(203, 213, 225),
+			},
+			options: [
+				{
+					id: 'pgm',
+					type: 'dropdown',
+					label: 'PGM',
+					choices: self.pgmChoices,
+					default: self.pgmChoices.length > 0 ? self.pgmChoices[0].id : '',
+				},
+			],
+			callback: (feedback) => {
+				const feedbackOptions = feedback.options as {
+					pgm: string
+				}
+
+				if (!self.state) return false
+
+				const pgm = self.state.pgms.find((pgm) => pgm.id === feedbackOptions.pgm)
+
+				if (!pgm) return false
+				self.log('info', 'Updating PGM Hidden State')
+				return pgm.hidden
 			},
 		},
 	})

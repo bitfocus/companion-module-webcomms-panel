@@ -1,4 +1,4 @@
-## WebComms Panel
+## WebComms Panel - v1.1.0
 
 This module is for interacting directly with the webcomms.net intercom system.
 
