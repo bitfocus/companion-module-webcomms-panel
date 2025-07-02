@@ -162,6 +162,67 @@ export function UpdateActions(self: ModuleInstance): void {
 				self.log('info', JSON.stringify(action))
 			},
 		},
+
+		globalMute: {
+			name: 'Globally Mute your Microphone',
+			options: [],
+			callback: async (action) => {
+				if (!self.state || !self.intercomDataChannel) {
+					return
+				}
+
+				const sentPayload = await self.intercomDataChannel.send({
+					type: 'broadcast',
+					event: self.config.companionIdentity,
+					intercomEvent: 'globalMuteChange',
+					payload: {
+						channelId: '',
+					},
+					globals: {
+						globalMute: !self.globals.globalMute,
+					},
+				})
+
+				if (sentPayload === 'error') {
+					self.log('error', 'Failed to send globalMuteChange event')
+				} else if (sentPayload === 'timed out') {
+					self.log('error', 'Timed out while sending globalMuteChange event')
+				}
+
+				self.log('info', JSON.stringify(action))
+			},
+		},
+
+		globalDeafen: {
+			name: 'Globally Deafen your Speakers',
+			options: [],
+			callback: async (action) => {
+				if (!self.state || !self.intercomDataChannel) {
+					return
+				}
+
+				const sentPayload = await self.intercomDataChannel.send({
+					type: 'broadcast',
+					event: self.config.companionIdentity,
+					intercomEvent: 'globalDeafenChange',
+					payload: {
+						channelId: '',
+					},
+					globals: {
+						globalDeafen: !self.globals.globalDeafen,
+					},
+				})
+
+				if (sentPayload === 'error') {
+					self.log('error', 'Failed to send globalMuteChange event')
+				} else if (sentPayload === 'timed out') {
+					self.log('error', 'Timed out while sending globalMuteChange event')
+				}
+
+				self.log('info', JSON.stringify(action))
+			},
+		},
+
 		setPGMVolume: {
 			name: 'Set PGM Volume',
 			options: [

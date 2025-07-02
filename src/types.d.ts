@@ -21,23 +21,25 @@ export interface RoleChoice {
 }
 
 interface PayloadMap {
-	talkStatusChange: RoleChannel
-	channelActivityStatusChange: RoleChannel
-	listenStatusChange: RoleChannel
-	channelVolumeChange: RoleChannel
-	pgmVolumeChange: RolePGM
-	pgmHiddenChange: RolePGM
 	companionSyncResponse: Role
 	companionSyncRequest?: undefined
 }
 
-export type IntercomDataChannelBroadcast<T extends keyof PayloadMap = keyof PayloadMap> = {
-	type: 'broadcast'
-	event: RealtimeMessage['event']
-	intercomEvent: T
-} & {
-	payload: T extends 'companionSyncRequest' ? PayloadMap[T] | undefined : PayloadMap[T]
-}
+export type IntercomDataChannelBroadcast<T extends keyof PayloadMap = keyof PayloadMap> =
+	T extends 'companionSyncRequest'
+		? {
+				type: 'broadcast'
+				event: RealtimeMessage['event']
+				intercomEvent: T
+				payload: undefined
+			}
+		: {
+				type: 'broadcast'
+				event: RealtimeMessage['event']
+				intercomEvent: T
+				payload: PayloadMap[T]
+				globals: Globals
+			}
 
 export type IntercomConfigWithRelations = QueryData<
 	Database['public']['Tables']['intercoms']['Row'] & {
@@ -47,9 +49,14 @@ export type IntercomConfigWithRelations = QueryData<
 	}
 >
 
+interface Globals {
+	globalMute: boolean
+	globalDeafen: boolean
+}
+
 export type CompanionEventResponsePayload = {
 	event: string
-	state: Channel
+	state: Role | RoleChannel | RolePGM | Globals
 	roleId?: string
 }
 
@@ -60,6 +67,7 @@ export type CompanionEventRequestPayload = {
 	listening?: boolean
 	volume?: number
 	roleId?: string
+	globals: Globals
 }
 
 export type DatabaseChannel = {

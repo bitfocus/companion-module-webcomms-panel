@@ -22,8 +22,7 @@ import type {
 	RoleChoice,
 	SupabaseEnvVars,
 	IntercomConfigWithRelations,
-	RoleChannel,
-	RolePGM,
+	Globals,
 } from './types.d.ts'
 import type { Database } from './supabase.js'
 import { createClient, RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js'
@@ -35,6 +34,10 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	pgmChoices: PGMChoice[] = []
 	roleChoices: RoleChoice[] = []
 	state: Role | undefined
+	globals: Globals = {
+		globalMute: false,
+		globalDeafen: false,
+	}
 
 	supabase: SupabaseClient<Database> | undefined
 	supabaseIntercomConfig: IntercomConfigWithRelations | undefined
@@ -196,99 +199,27 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	async handleDataChannelBroadcast(broadcastEvent: IntercomDataChannelBroadcast): Promise<void> {
 		this.log('warn', JSON.stringify(broadcastEvent))
 		switch (broadcastEvent.intercomEvent) {
-			case 'talkStatusChange': {
-				if (!this.state) return
-
-				const talkPayload = broadcastEvent.payload as RoleChannel
-
-				const channel = this.state.channels.find((ch) => ch.id === talkPayload.id)
-				if (!channel) return
-
-				channel.talkActive = talkPayload.talkActive
-
-				this.checkFeedbacks('talkStatus')
-				break
-			}
-
-			case 'listenStatusChange': {
-				if (!this.state) return
-
-				const listenPayload = broadcastEvent.payload as RoleChannel
-
-				const channel = this.state.channels.find((ch) => ch.id === listenPayload.id)
-				if (!channel) return
-
-				channel.listenActive = listenPayload.listenActive
-
-				this.checkFeedbacks('listenStatus')
-				break
-			}
-
-			case 'channelActivityStatusChange': {
-				if (!this.state) return
-
-				this.log('warn', JSON.stringify(broadcastEvent))
-
-				const talkActivityStatusPayload = broadcastEvent.payload as RoleChannel
-				const channel = this.state.channels.find((ch) => ch.id === talkActivityStatusPayload.id)
-
-				if (!channel) return
-
-				channel.talkActivity = !talkActivityStatusPayload.talkActivity
-
-				this.checkFeedbacks('channelActivity')
-				break
-			}
-
-			case 'channelVolumeChange': {
-				if (!this.state) return
-
-				const volumePayload = broadcastEvent.payload as RoleChannel
-
-				const channel = this.state.channels.find((ch) => ch.id === volumePayload.id)
-				if (!channel) return
-
-				channel.volume = volumePayload.volume
-
-				this.setVariableValues(this.generateVariableValues())
-				break
-			}
-
-			case 'pgmVolumeChange': {
-				if (!this.state) return
-				const volumePayload = broadcastEvent.payload as RolePGM
-				const rolePGM = this.state.pgms.find((pgm) => pgm.id === volumePayload.id)
-				if (!rolePGM) return
-				rolePGM.volume = volumePayload.volume
-
-				this.setVariableValues(this.generateVariableValues())
-				break
-			}
-
-			case 'pgmHiddenChange': {
-				if (!this.state) return
-				const payload = broadcastEvent.payload as RolePGM
-				const rolePGM = this.state.pgms.find((pgm) => pgm.id === payload.id)
-				if (!rolePGM) return
-				rolePGM.hidden = payload.hidden
-
-				this.checkFeedbacks('pgmHidden')
-				break
-			}
-
 			case 'companionSyncResponse':
-				this.state = broadcastEvent.payload as Role
+				if (!this.state || !this.globals) {
+					this.state = broadcastEvent.payload
+					this.globals = broadcastEvent.globals
+
+					this.updateActions()
+					this.updateFeedbacks()
+					this.updateVariableDefinitions()
+				}
+
+				this.state = broadcastEvent.payload
+				this.globals = broadcastEvent.globals
 				this.log('info', 'Companion sync response received')
 				this.log('debug', JSON.stringify(this.state))
 
-				this.updateActions()
-				this.updateFeedbacks()
-				this.checkFeedbacks('talkStatus', 'listenStatus', 'channelActivity', 'pgmHidden')
-				this.log('debug', 'generating variable definitions')
-				this.updateVariableDefinitions()
+				this.checkFeedbacks('talkStatus', 'listenStatus', 'channelActivity', 'pgmHidden', 'globalMute', 'globalDeafen')
 				this.setVariableValues(this.generateVariableValues())
 
-				clearTimeout(this.companionSyncTimeout)
+				if (this.companionSyncTimeout) {
+					clearTimeout(this.companionSyncTimeout)
+				}
 				this.updateStatus(InstanceStatus.Ok)
 				break
 
@@ -296,7 +227,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 				break
 
 			default:
-				this.log('info', 'Unknown event received: ' + broadcastEvent.intercomEvent)
+				this.log('info', 'Unknown event received: ' + broadcastEvent)
 				break
 		}
 	}

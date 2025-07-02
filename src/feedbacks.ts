@@ -71,6 +71,38 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			},
 		},
 
+		globalMute: {
+			type: 'boolean',
+			name: 'Global Panel Mute Status',
+			defaultStyle: {
+				// The default style change for a boolean feedback
+				// The user will be able to customise these values as well as the fields that will be changed
+				bgcolor: combineRgb(255, 0, 0),
+				color: combineRgb(0, 0, 0),
+			},
+			options: [],
+
+			callback: () => {
+				return self.globals.globalMute
+			},
+		},
+
+		globalDeafen: {
+			type: 'boolean',
+			name: 'Global Panel Deafen Status',
+			defaultStyle: {
+				// The default style change for a boolean feedback
+				// The user will be able to customise these values as well as the fields that will be changed
+				bgcolor: combineRgb(255, 0, 0),
+				color: combineRgb(0, 0, 0),
+			},
+			options: [],
+
+			callback: () => {
+				return self.globals.globalDeafen
+			},
+		},
+
 		channelActivity: {
 			name: 'Channel Activity',
 			type: 'boolean',
