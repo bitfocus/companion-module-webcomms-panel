@@ -131,7 +131,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				if (!channel) return false
 
 				self.log('info', 'Updating channel activity')
-				return channel.talking
+				return channel.channelActivity
 			},
 		},
 		pgmHidden: {
