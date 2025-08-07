@@ -87,10 +87,10 @@ export interface Channel extends DatabaseChannel {
 export type RoleChannel = {
 	id: string
 	localPermissions: 'disabled' | 'listenOnly' | 'talkOnly' | 'duplex'
-	talkActivity: boolean
+	channelActivity: boolean
 	volume: number
-	listenActive: boolean
-	talkActive: boolean
+	listening: boolean
+	talking: boolean
 }
 
 export type DatabasePGM = {

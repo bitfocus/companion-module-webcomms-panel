@@ -33,7 +33,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				if (!channel) return false
 
 				self.log('info', 'Updating talking feedback')
-				return channel.talkActive
+				return channel.talking
 			},
 		},
 		listenStatus: {
@@ -67,7 +67,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				if (!channel) return false
 
 				self.log('info', 'Updating listen feedback')
-				return channel.listenActive
+				return channel.listening
 			},
 		},
 
@@ -131,7 +131,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				if (!channel) return false
 
 				self.log('info', 'Updating channel activity')
-				return channel.talkActivity
+				return channel.talking
 			},
 		},
 		pgmHidden: {

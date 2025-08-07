@@ -26,7 +26,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = self.state.channels.find((ch) => ch.id === companionOptions.channel)
 				if (!channel) return
 
-				const talking = channel.talkActive
+				const talking = channel.talking
 
 				const sentPayload = await self.intercomDataChannel.send({
 					type: 'broadcast',
@@ -39,7 +39,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				})
 
 				if (sentPayload === 'ok') {
-					channel.talkActive = !talking
+					channel.talking = !talking
 				} else if (sentPayload === 'error') {
 					self.log('error', 'Failed to send talkStatusChange event')
 				} else if (sentPayload === 'timed out') {
@@ -73,7 +73,7 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				if (!channel) return
 
-				const listening = channel.listenActive
+				const listening = channel.listening
 
 				const sentPayload = await self.intercomDataChannel.send({
 					type: 'broadcast',
@@ -86,7 +86,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				})
 
 				if (sentPayload === 'ok') {
-					channel.listenActive = !listening
+					channel.listening = !listening
 				} else if (sentPayload === 'error') {
 					self.log('error', 'Failed to send talkStatusChange event')
 				} else if (sentPayload === 'timed out') {
