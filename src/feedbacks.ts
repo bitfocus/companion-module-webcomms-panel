@@ -18,8 +18,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.channelChoices,
-					default: self.channelChoices.length > 0 ? self.channelChoices[0].id : '',
+					choices: self.state?.channels.map((ch) => ({ id: ch.id, label: ch.name })) ?? [],
+					default: self.state?.channels && self.state?.channels.length > 0 ? self.state.channels[0].id : '',
 				},
 			],
 			callback: (feedback) => {
@@ -32,8 +32,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const channel = self.state.channels.find((ch) => ch.id === feedbackOptions.channel)
 				if (!channel) return false
 
-				self.log('info', 'Updating talking feedback')
-				return channel.talking
+				self.log('debug', 'Updating talking feedback')
+				return channel.isTalking
 			},
 		},
 		listenStatus: {
@@ -51,8 +51,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.channelChoices,
-					default: self.channelChoices.length > 0 ? self.channelChoices[0].id : '',
+					choices: self.state?.channels.map((ch) => ({ id: ch.id, label: ch.name })) ?? [],
+					default: self.state?.channels && self.state?.channels.length > 0 ? self.state.channels[0].id : '',
 				},
 			],
 			callback: (feedback) => {
@@ -66,8 +66,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 				if (!channel) return false
 
-				self.log('info', 'Updating listen feedback')
-				return channel.listening
+				self.log('debug', 'Updating listen feedback')
+				return !(channel.outputMuted || channel.volume === 0)
 			},
 		},
 
@@ -83,7 +83,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [],
 
 			callback: () => {
-				return self.globals.globalMute
+				return self.state?.panel.inputMuted ?? false
 			},
 		},
 
@@ -99,7 +99,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [],
 
 			callback: () => {
-				return self.globals.globalDeafen
+				return self.state?.panel.outputMuted ?? false
 			},
 		},
 
@@ -115,8 +115,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					id: 'channel',
 					type: 'dropdown',
 					label: 'Channel',
-					choices: self.channelChoices,
-					default: self.channelChoices.length > 0 ? self.channelChoices[0].id : '',
+					choices: self.state?.channels.map((ch) => ({ id: ch.id, label: ch.name })) ?? [],
+					default: self.state?.channels && self.state?.channels.length > 0 ? self.state.channels[0].id : '',
 				},
 			],
 			callback: (feedback) => {
@@ -130,38 +130,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 				if (!channel) return false
 
-				self.log('info', 'Updating channel activity')
-				return channel.channelActivity
-			},
-		},
-		pgmHidden: {
-			name: 'PGM Hidden',
-			type: 'boolean',
-			defaultStyle: {
-				bgcolor: combineRgb(71, 85, 105),
-				color: combineRgb(203, 213, 225),
-			},
-			options: [
-				{
-					id: 'pgm',
-					type: 'dropdown',
-					label: 'PGM',
-					choices: self.pgmChoices,
-					default: self.pgmChoices.length > 0 ? self.pgmChoices[0].id : '',
-				},
-			],
-			callback: (feedback) => {
-				const feedbackOptions = feedback.options as {
-					pgm: string
-				}
-
-				if (!self.state) return false
-
-				const pgm = self.state.pgms.find((pgm) => pgm.id === feedbackOptions.pgm)
-
-				if (!pgm) return false
-				self.log('info', 'Updating PGM Hidden State')
-				return pgm.hidden
+				self.log('debug', 'Updating channel activity')
+				return channel.activity
 			},
 		},
 	})

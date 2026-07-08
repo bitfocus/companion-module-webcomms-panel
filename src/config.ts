@@ -8,18 +8,13 @@ export interface ModuleConfig {
 export function GetConfigFields(): SomeCompanionConfigField[] {
 	return [
 		{
-			type: 'textinput',
-			id: 'companionIdentity',
-			label: 'Companion Identity',
+			type: 'number',
+			id: 'port',
+			label: 'Port',
 			width: 12,
-			default: '',
-		},
-		{
-			type: 'textinput',
-			id: 'intercomName',
-			label: 'Intercom Name',
-			width: 12,
-			default: '',
+			default: 7171,
+			min: 0,
+			max: 50000,
 		},
 	]
 }
