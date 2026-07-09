@@ -1,16 +1,18 @@
 {
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
 	"id": "webcomms-panel",
-	"name": "Web-Comms-Panel",
-	"shortname": "Web-Comms-Panel",
-	"description": "Direct: Web Comms plugin for Companion",
-	"version": "1.1.0",
+	"name": "webcomms-panel",
+	"shortname": "Comms-Panel",
+	"description": "Web Comms plugin for Companion",
+	"version": "0.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-webcomms-panel.git",
 	"bugs": "https://github.com/bitfocus/companion-module-webcomms-panel/issues",
 	"maintainers": [
 		{
 			"name": "George Patchett",
-			"email": "george.patchett@gmail.com"
+			"email": "hello@webcomms.net"
 		}
 	],
 	"runtime": {
