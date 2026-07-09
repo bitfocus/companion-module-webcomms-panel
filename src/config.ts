@@ -1,8 +1,7 @@
 import { type SomeCompanionConfigField } from '@companion-module/base'
 
-export interface ModuleConfig {
-	companionIdentity: string
-	intercomName: string
+export type ModuleConfig = {
+	port: number
 }
 
 export function GetConfigFields(): SomeCompanionConfigField[] {

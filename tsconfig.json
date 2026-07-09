@@ -1,8 +1,9 @@
 {
 	"extends": "./tsconfig.build.json",
-	"include": ["src"],
+	"include": ["src/**/*.ts"],
 	"exclude": ["node_modules/**"],
 	"compilerOptions": {
-		"types": ["jest", "node"]
+		"types": ["node" /* , "jest" ] // uncomment this if using jest */],
+		"ignoreDeprecations": "6.0"
 	}
 }

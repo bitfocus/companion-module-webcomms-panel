@@ -1,22 +1,13 @@
-import {
-	InstanceBase,
-	runEntrypoint,
-	InstanceStatus,
-	SomeCompanionConfigField,
-	//CompanionVariableValues,
-	//CompanionVariableDefinition,
-} from '@companion-module/base'
+import { InstanceBase, InstanceStatus, runEntrypoint, type SomeCompanionConfigField } from '@companion-module/base'
 import { GetConfigFields, type ModuleConfig } from './config.js'
-//import { UpdateVariableDefinitions } from './variables.js'
-import { UpgradeScripts } from './upgrades.js'
-import { UpdateFeedbacks } from './feedbacks.js'
-
-import type { SyncResponse, ChannelSyncData } from './types.d.ts'
+import type { SyncResponse, ChannelSyncData } from './types.d.js'
 import { Server, Socket } from 'socket.io'
 import { createServer } from 'http'
 import { UpdateActions } from './actions.js'
+import { UpdateFeedbacks } from './feedbacks.js'
+import { UpgradeScripts } from './upgrades.js'
 
-export class ModuleInstance extends InstanceBase<ModuleConfig> {
+export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 	config!: ModuleConfig
 
 	state: SyncResponse | undefined
@@ -36,9 +27,9 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	}
 
 	async init(config: ModuleConfig): Promise<void> {
+		this.config = config
 		this.log('info', 'Initializing module')
 		this.updateStatus(InstanceStatus.Connecting)
-		this.config = config
 
 		this.updateActions()
 
@@ -52,7 +43,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 				this.state = syncData
 				this.updateActions()
 				this.updateFeedbacks()
-				this.checkFeedbacks()
+				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
 			})
 
 			socket.on('channelResponse', (channelData: ChannelSyncData) => {
@@ -66,7 +57,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 				this.state.channels.splice(channelFound, 1, channelData)
 
-				this.checkFeedbacks()
+				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
 			})
 
 			socket.emit('syncRequest')

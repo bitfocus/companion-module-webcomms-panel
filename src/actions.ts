@@ -1,5 +1,11 @@
-import type { ModuleInstance } from './main.js'
-import { ChannelAction, PanelAction } from './types.d.js'
+import type ModuleInstance from './main.js'
+import type { ChannelAction, PanelAction, SyncResponse } from './types.d.js'
+
+function getChannelChoices(state?: SyncResponse) {
+	if (!state) return []
+
+	return state.channels.map(({ id, name: label }) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label))
+}
 
 export function UpdateActions(self: ModuleInstance): void {
 	self.setActionDefinitions({
@@ -11,8 +17,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -41,8 +47,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -71,8 +77,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -103,8 +109,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -133,8 +139,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -163,8 +169,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -195,8 +201,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: self.state?.channels.map(({ id, name: label }) => ({ id, label })) ?? [],
-					default: self.state?.channels.map(({ id }) => id)[0] ?? '',
+					choices: getChannelChoices(self.state),
+					default: getChannelChoices(self.state)[0]?.id ?? '',
 				},
 				{
 					type: 'number',
@@ -304,131 +310,6 @@ export function UpdateActions(self: ModuleInstance): void {
 				emitPanelAction(self, self.state.panel.outputMuted ? 'unmuteOutput' : 'muteOutput')
 			},
 		},
-
-		// setPGMVolume: {
-		// 	name: 'Set PGM Volume',
-		// 	options: [
-		// 		{
-		// 			type: 'dropdown',
-		// 			label: 'PGM',
-		// 			id: 'pgm',
-		// 			choices: self.pgmChoices,
-		// 			default: self.pgmChoices.length > 0 ? self.pgmChoices[0].id : '',
-		// 		},
-		// 		{
-		// 			type: 'number',
-		// 			label: 'Volume',
-		// 			id: 'volume',
-		// 			default: 100,
-		// 			min: 0,
-		// 			max: 100,
-		// 			step: 1,
-		// 		},
-		// 	],
-		// 	callback: async (action) => {
-		// 		if (!self.state || !self.state.pgms || !self.intercomDataChannel || !self.supabaseIntercomConfig) {
-		// 			return
-		// 		}
-
-		// 		const companionOptions = action.options as {
-		// 			pgm: string
-		// 			volume: number
-		// 		}
-
-		// 		if (companionOptions.volume > 100 || companionOptions.volume < 0) {
-		// 			self.log('error', 'Volume must be between 0 and 100')
-		// 			return
-		// 		}
-
-		// 		const sentPayload = await self.intercomDataChannel.send({
-		// 			type: 'broadcast',
-		// 			event: self.config.companionIdentity,
-		// 			intercomEvent: 'pgmVolumeChange',
-		// 			payload: {
-		// 				pgmId: companionOptions.pgm,
-		// 				volume: companionOptions.volume,
-		// 			},
-		// 		})
-
-		// 		if (sentPayload === 'ok') {
-		// 			const pgm: PGM | undefined = self.supabaseIntercomConfig.pgms.find(
-		// 				(pgm: PGM) => pgm.id === companionOptions.pgm,
-		// 			)
-		// 			if (!pgm) {
-		// 				self.log('error', 'Invalid PGM')
-		// 				return
-		// 			}
-
-		// 			self.setVariableValues({
-		// 				[pgm.name.replaceAll(' ', '_') + '_volume']: companionOptions.volume,
-		// 			})
-		// 		} else if (sentPayload === 'error') {
-		// 			self.log('error', 'Failed to send volumeChange event')
-		// 		} else if (sentPayload === 'timed out') {
-		// 			self.log('error', 'Timed out while sending volumeChange event')
-		// 		}
-
-		// 		self.log('info', JSON.stringify(action))
-		// 	},
-		// },
-		// setPGMHidden: {
-		// 	name: 'Set PGM Hidden',
-		// 	options: [
-		// 		{
-		// 			type: 'dropdown',
-		// 			label: 'PGM',
-		// 			id: 'pgm',
-		// 			choices: self.pgmChoices,
-		// 			default: self.pgmChoices.length > 0 ? self.pgmChoices[0].id : '',
-		// 		},
-		// 		{
-		// 			type: 'checkbox',
-		// 			label: 'Hide PGM Feed',
-		// 			id: 'hidden',
-		// 			default: false,
-		// 		},
-		// 	],
-		// 	callback: async (action) => {
-		// 		if (!self.state || !self.state.pgms || !self.intercomDataChannel || !self.supabaseIntercomConfig) {
-		// 			return
-		// 		}
-
-		// 		const companionOptions = action.options as {
-		// 			pgm: string
-		// 			hidden: boolean
-		// 		}
-
-		// 		const sentPayload = await self.intercomDataChannel.send({
-		// 			type: 'broadcast',
-		// 			event: self.config.companionIdentity,
-		// 			intercomEvent: 'pgmHiddenChange',
-		// 			payload: {
-		// 				pgmId: companionOptions.pgm,
-		// 				hidden: companionOptions.hidden,
-		// 			},
-		// 		})
-
-		// 		if (sentPayload === 'ok') {
-		// 			const pgm: PGM | undefined = self.supabaseIntercomConfig.pgms.find(
-		// 				(pgm: PGM) => pgm.id === companionOptions.pgm,
-		// 			)
-		// 			if (!pgm) {
-		// 				self.log('error', 'Invalid PGM')
-		// 				return
-		// 			}
-
-		// 			self.setVariableValues({
-		// 				[pgm.name.replaceAll(' ', '_') + '_hidden']: companionOptions.hidden,
-		// 			})
-		// 		} else if (sentPayload === 'error') {
-		// 			self.log('error', 'Failed to send volumeChange event')
-		// 		} else if (sentPayload === 'timed out') {
-		// 			self.log('error', 'Timed out while sending volumeChange event')
-		// 		}
-
-		// 		self.log('info', JSON.stringify(action))
-		// 	},
-		// },
 	})
 
 	console.log('actions updated')

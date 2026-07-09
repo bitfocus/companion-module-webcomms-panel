@@ -1,5 +1,5 @@
-//import type { ModuleInstance } from './main.js'
+import type ModuleInstance from './main.js'
 
-export function UpdateVariableDefinitions(/**self: ModuleInstance */): void {
+export function UpdateVariableDefinitions(_: ModuleInstance): void {
 	//self.setVariableDefinitions(self.generateVariableDefinitions())
 }
