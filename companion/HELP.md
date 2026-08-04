@@ -2,6 +2,9 @@
 
 This module is for interacting directly with the webcomms.net intercom system.
 
+### Breaking changes when migrating from v1
+The ids used to identify channels in actions and feedback have been changed. Actions and feedbacks will need relinking in order to restore functionality.
+
 ### Configuration
 
 - Enter your Companion Identity which you receive upon registration at www.webcomms.net. It can be found in your account settings or by clicking the Companion icon in the intercom room.
