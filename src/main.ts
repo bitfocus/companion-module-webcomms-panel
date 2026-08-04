@@ -63,8 +63,14 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 			socket.emit('syncRequest')
 		})
 
-		this.server.listen(7171, () => {
-			this.log('debug', `Server listening on 7171`)
+		const port = Number(this.config.port) || 7171
+		if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+			this.updateStatus(InstanceStatus.BadConfig, 'Invalid port')
+			return
+		}
+
+		this.server.listen(port, () => {
+			this.log('debug', `Server listening on ${port}`)
 			this.updateStatus(InstanceStatus.Ok)
 		})
 	}
