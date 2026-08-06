@@ -50,7 +50,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 			socket.on('channelResponse', (channelData: ChannelSyncData) => {
 				if (!this.state) {
-					socket.emit('syncRequest')
+					this.startSyncPolling(socket)
 					return
 				}
 				const channelFound = this.state.channels.findIndex((ch) => ch.id === channelData.id)
@@ -71,10 +71,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 				}
 			})
 
-			this.companionSyncTimeout = setInterval(() => {
-				if (this.state) clearInterval(this.companionSyncTimeout)
-				else socket.emit('syncRequest')
-			}, 2000)
+			this.startSyncPolling(socket)
 		})
 
 		const port = Number(this.config.port) || 7171
@@ -96,6 +93,15 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 	async configUpdated(config: ModuleConfig): Promise<void> {
 		this.state = undefined // Reset state on config update
 		await this.init(config)
+	}
+
+	startSyncPolling(socket: Socket): void {
+		if (this.companionSyncTimeout || this.state) return
+
+		this.companionSyncTimeout = setInterval(() => {
+			if (this.state && this.companionSyncTimeout) clearInterval(this.companionSyncTimeout)
+			else socket.emit('syncRequest')
+		}, 2000)
 	}
 
 	// Return config fields for web config
