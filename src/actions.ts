@@ -316,13 +316,12 @@ export function UpdateActions(self: ModuleInstance): void {
 }
 
 function emitChannelAction(self: ModuleInstance, channelId: string, action: ChannelAction, volume?: number) {
-	self.sockets.forEach((socket) => {
-		socket.emit('channelEvent', channelId, action, volume)
-	})
+	if (!self.socket) return
+	self.socket.emit('channelEvent', channelId, action, volume)
 }
 
 function emitPanelAction(self: ModuleInstance, action: PanelAction) {
-	self.sockets.forEach((socket) => {
-		socket.emit('panelEvent', action)
-	})
+	if (!self.socket) return
+
+	self.socket.emit('panelEvent', action)
 }

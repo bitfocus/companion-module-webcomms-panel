@@ -20,7 +20,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 			origin: [/^https:\/\/.*\.webcomms\.net$/, 'http://localhost:5173', 'http://127.0.0.1:5173'],
 		},
 	})
-	sockets: Socket[] = []
+	socket?: Socket
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -36,7 +36,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 		this.io.on('connect', (socket: Socket) => {
 			this.log('info', 'New connection')
-			this.sockets.push(socket)
+			this.socket = socket
 			console.log(socket.connected)
 
 			socket.on('syncResponse', (syncData: SyncResponse) => {
@@ -63,12 +63,14 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 			})
 
 			socket.on('disconnect', (reason) => {
-				this.sockets = this.sockets.filter((s) => s.id !== socket.id)
-				this.log('info', `Client disconnected: ${reason}`)
-				if (this.sockets.length === 0) {
-					this.state = undefined
-					this.updateStatus(InstanceStatus.Disconnected, 'No panel connected')
+				if (this.socket) {
+					this.socket = undefined
 				}
+
+				this.state = undefined
+				this.updateStatus(InstanceStatus.Disconnected, 'No panel connected')
+				this.log('info', `Client disconnected: ${reason}`)
+				return
 			})
 
 			this.startSyncPolling(socket)
