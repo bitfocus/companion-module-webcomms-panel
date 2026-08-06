@@ -35,8 +35,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, 'unmuteInput')
 				channel.isTalking = true
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
@@ -66,8 +64,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, 'muteInput')
 				channel.isTalking = false
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
@@ -97,8 +93,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, channel.isTalking ? 'muteInput' : 'unmuteInput')
 				channel.isTalking = !channel.isTalking
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
@@ -128,8 +122,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, 'muteOutput')
 				channel.outputMuted = true
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
@@ -159,8 +151,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, 'unmuteOutput')
 				channel.outputMuted = false
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
@@ -190,8 +180,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, !channel.outputMuted ? 'muteOutput' : 'unmuteOutput')
 				channel.outputMuted = !channel.outputMuted
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
@@ -231,8 +219,6 @@ export function UpdateActions(self: ModuleInstance): void {
 
 				emitChannelAction(self, channelId, 'setVolume', volume)
 				channel.volume = volume
-
-				self.log('info', JSON.stringify(action))
 			},
 		},
 
