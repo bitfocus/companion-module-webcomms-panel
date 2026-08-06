@@ -42,6 +42,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 			socket.on('syncResponse', (syncData: SyncResponse) => {
 				console.debug('Sync Response Received', syncData)
 				this.state = syncData
+				this.updateStatus(InstanceStatus.Ok)
 				this.updateActions()
 				this.updateFeedbacks()
 				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
@@ -84,7 +85,6 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 		this.server.listen(port, () => {
 			this.log('debug', `Server listening on ${port}`)
-			this.updateStatus(InstanceStatus.Ok)
 		})
 	}
 	// When module gets deleted
