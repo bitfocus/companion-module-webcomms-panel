@@ -70,7 +70,10 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 				}
 			})
 
-			socket.emit('syncRequest')
+			this.companionSyncTimeout = setInterval(() => {
+				if (this.state) clearInterval(this.companionSyncTimeout)
+				else socket.emit('syncRequest')
+			}, 2000)
 		})
 
 		const port = Number(this.config.port) || 7171
