@@ -34,6 +34,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'unmuteInput')
+				channel.isTalking = true
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -64,6 +65,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'muteInput')
+				channel.isTalking = false
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -93,9 +95,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = self.state.channels.find((ch) => ch.id === channelId)
 				if (!channel) return
 
-				const talking = channel.isTalking
-
-				emitChannelAction(self, channelId, talking ? 'muteInput' : 'unmuteInput')
+				emitChannelAction(self, channelId, channel.isTalking ? 'muteInput' : 'unmuteInput')
+				channel.isTalking = !channel.isTalking
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -126,6 +127,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'muteOutput')
+				channel.outputMuted = true
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -156,6 +158,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'unmuteOutput')
+				channel.outputMuted = false
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -185,9 +188,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = self.state.channels.find((ch) => ch.id === channelId)
 				if (!channel) return
 
-				const listening = !channel.outputMuted
-
-				emitChannelAction(self, channelId, listening ? 'muteOutput' : 'unmuteOutput')
+				emitChannelAction(self, channelId, !channel.outputMuted ? 'muteOutput' : 'unmuteOutput')
+				channel.outputMuted = !channel.outputMuted
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -228,6 +230,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'setVolume', volume)
+				channel.volume = volume
 
 				self.log('info', JSON.stringify(action))
 			},
@@ -243,6 +246,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				emitPanelAction(self, 'muteInput')
+				self.state.panel.inputMuted = true
 			},
 		},
 
@@ -256,6 +260,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				emitPanelAction(self, 'unmuteInput')
+				self.state.panel.inputMuted = false
 			},
 		},
 
@@ -269,6 +274,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				emitPanelAction(self, self.state.panel.inputMuted ? 'unmuteInput' : 'muteInput')
+				self.state.panel.inputMuted = !self.state.panel.inputMuted
 			},
 		},
 
@@ -282,6 +288,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				emitPanelAction(self, 'muteOutput')
+				self.state.panel.outputMuted = true
 			},
 		},
 
@@ -295,6 +302,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				emitPanelAction(self, 'unmuteOutput')
+				self.state.panel.outputMuted = false
 			},
 		},
 
@@ -308,6 +316,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				emitPanelAction(self, self.state.panel.outputMuted ? 'unmuteOutput' : 'muteOutput')
+				self.state.panel.outputMuted = !self.state.panel.outputMuted
 			},
 		},
 	})
