@@ -32,6 +32,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.updateStatus(InstanceStatus.Connecting)
 
 		this.updateActions()
+		this.updateFeedbacks()
 
 		this.io.on('connect', (socket: Socket) => {
 			this.log('info', 'New connection')
