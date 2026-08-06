@@ -60,6 +60,15 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
 			})
 
+			socket.on('disconnect', (reason) => {
+				this.sockets = this.sockets.filter((s) => s.id !== socket.id)
+				this.log('info', `Client disconnected: ${reason}`)
+				if (this.sockets.length === 0) {
+					this.state = undefined
+					this.updateStatus(InstanceStatus.Disconnected, 'No panel connected')
+				}
+			})
+
 			socket.emit('syncRequest')
 		})
 
