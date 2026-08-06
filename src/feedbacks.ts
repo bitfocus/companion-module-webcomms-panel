@@ -23,7 +23,6 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				console.warn('feedback', feedback)
 				const feedbackOptions = feedback.options as {
 					channel: string
 				}

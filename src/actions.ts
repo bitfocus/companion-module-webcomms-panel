@@ -321,7 +321,7 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 	})
 
-	console.log('actions updated')
+	self.log('info', 'actions updated')
 }
 
 function emitChannelAction(self: ModuleInstance, channelId: string, action: ChannelAction, volume?: number) {

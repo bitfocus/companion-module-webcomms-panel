@@ -37,10 +37,8 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.io.on('connect', (socket: Socket) => {
 			this.log('info', 'New connection')
 			this.socket = socket
-			console.log(socket.connected)
 
 			socket.on('syncResponse', (syncData: SyncResponse) => {
-				console.debug('Sync Response Received', syncData)
 				this.state = syncData
 				this.updateStatus(InstanceStatus.Ok)
 				this.updateActions()
