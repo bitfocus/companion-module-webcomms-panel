@@ -16,7 +16,6 @@ export type SyncResponse = {
 	created_at: string
 	id: string
 	name: string
-	password: string | null
 	workspace: string
 	companion: null | 'basic' | 'advanced'
 }
