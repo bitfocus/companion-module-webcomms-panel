@@ -3,7 +3,6 @@
 	"include": ["src/**/*.ts"],
 	"exclude": ["node_modules/**"],
 	"compilerOptions": {
-		"types": ["node" /* , "jest" ] // uncomment this if using jest */],
-		"ignoreDeprecations": "6.0"
+		"types": ["node" /* , "jest" ] // uncomment this if using jest */]
 	}
 }

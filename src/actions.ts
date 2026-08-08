@@ -1,5 +1,5 @@
 import type ModuleInstance from './main.js'
-import type { ChannelAction, PanelAction, SyncResponse } from './types.d.js'
+import type { ChannelAction, PanelAction, SyncResponse } from './types.js'
 
 function getChannelChoices(state?: SyncResponse) {
 	if (!state) return []
@@ -7,7 +7,24 @@ function getChannelChoices(state?: SyncResponse) {
 	return state.channels.map(({ id, name: label }) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label))
 }
 
+function validStateAndChannels(
+	self: ModuleInstance,
+	validateChannels: boolean = true,
+): self is ModuleInstance & { state: SyncResponse } {
+	if (!self.state) {
+		self.log('warn', 'No state for panel, connection or sync required')
+		return false
+	} else if (validateChannels && !self.state.channels) {
+		self.log('warn', 'No channels in state for panel, needs new connection or sync')
+		return false
+	}
+
+	return true
+}
+
 export function UpdateActions(self: ModuleInstance): void {
+	const channelChoices = getChannelChoices(self.state)
+
 	self.setActionDefinitions({
 		unmuteChannelInput: {
 			name: 'Channel: Activate Talk',
@@ -17,12 +34,12 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -34,8 +51,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'unmuteInput')
-
-				self.log('info', JSON.stringify(action))
+				channel.isTalking = true
 			},
 		},
 
@@ -47,12 +63,12 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -64,8 +80,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'muteInput')
-
-				self.log('info', JSON.stringify(action))
+				channel.isTalking = false
 			},
 		},
 
@@ -77,12 +92,12 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -93,11 +108,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = self.state.channels.find((ch) => ch.id === channelId)
 				if (!channel) return
 
-				const talking = channel.isTalking
-
-				emitChannelAction(self, channelId, talking ? 'muteInput' : 'unmuteInput')
-
-				self.log('info', JSON.stringify(action))
+				emitChannelAction(self, channelId, channel.isTalking ? 'muteInput' : 'unmuteInput')
+				channel.isTalking = !channel.isTalking
 			},
 		},
 
@@ -109,12 +121,12 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -126,8 +138,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'muteOutput')
-
-				self.log('info', JSON.stringify(action))
+				channel.outputMuted = true
 			},
 		},
 
@@ -139,12 +150,12 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -156,11 +167,13 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'unmuteOutput')
-
-				self.log('info', JSON.stringify(action))
+				channel.outputMuted = false
 			},
 		},
 
+		// A user can toggle the hard output mute of a channel regardless of the volume.
+		// If the user has set the volume at 0 and toggles the output mute then the result can only be
+		// removing the mute and setting the volume to what it was before the mute, which is handled in Web Comms.
 		toggleChannelOutput: {
 			name: 'Channel: Toggle Output Mute',
 			description: 'Toggle the output mute of a channel',
@@ -169,12 +182,12 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -185,11 +198,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = self.state.channels.find((ch) => ch.id === channelId)
 				if (!channel) return
 
-				const listening = !channel.outputMuted
-
-				emitChannelAction(self, channelId, listening ? 'muteOutput' : 'unmuteOutput')
-
-				self.log('info', JSON.stringify(action))
+				emitChannelAction(self, channelId, !channel.outputMuted ? 'muteOutput' : 'unmuteOutput')
+				channel.outputMuted = !channel.outputMuted
 			},
 		},
 
@@ -201,8 +211,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 				{
 					type: 'number',
@@ -215,7 +225,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -228,8 +238,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				if (!channel) return
 
 				emitChannelAction(self, channelId, 'setVolume', volume)
-
-				self.log('info', JSON.stringify(action))
+				channel.volume = volume
 			},
 		},
 
@@ -238,11 +247,12 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally mute your microphone',
 			options: [],
 			callback: () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
 				emitPanelAction(self, 'muteInput')
+				self.state.panel.inputMuted = true
 			},
 		},
 
@@ -251,11 +261,12 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally unmute your microphone',
 			options: [],
 			callback: () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
 				emitPanelAction(self, 'unmuteInput')
+				self.state.panel.inputMuted = false
 			},
 		},
 
@@ -264,11 +275,12 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally toggle your microphone on/off',
 			options: [],
 			callback: () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
 				emitPanelAction(self, self.state.panel.inputMuted ? 'unmuteInput' : 'muteInput')
+				self.state.panel.inputMuted = !self.state.panel.inputMuted
 			},
 		},
 
@@ -276,12 +288,13 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Panel: Mute Output',
 			description: 'Globally mute the output of the intercom',
 			options: [],
-			callback: async () => {
-				if (!self.state) {
+			callback: () => {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
 				emitPanelAction(self, 'muteOutput')
+				self.state.panel.outputMuted = true
 			},
 		},
 
@@ -289,12 +302,13 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Panel: Unmute Output',
 			description: 'Globally unmute the output of the intercom',
 			options: [],
-			callback: async () => {
-				if (!self.state) {
+			callback: () => {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
 				emitPanelAction(self, 'unmuteOutput')
+				self.state.panel.outputMuted = false
 			},
 		},
 
@@ -302,27 +316,27 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Panel: Toggle Panel Output',
 			description: 'Toggle the output mute of the intercom',
 			options: [],
-			callback: async () => {
-				if (!self.state) {
+			callback: () => {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
 				emitPanelAction(self, self.state.panel.outputMuted ? 'unmuteOutput' : 'muteOutput')
+				self.state.panel.outputMuted = !self.state.panel.outputMuted
 			},
 		},
 	})
 
-	console.log('actions updated')
+	self.log('info', 'actions updated')
 }
 
 function emitChannelAction(self: ModuleInstance, channelId: string, action: ChannelAction, volume?: number) {
-	self.sockets.forEach((socket) => {
-		socket.emit('channelEvent', channelId, action, volume)
-	})
+	if (!self.socket) return
+	self.socket.emit('channelEvent', channelId, action, volume)
 }
 
 function emitPanelAction(self: ModuleInstance, action: PanelAction) {
-	self.sockets.forEach((socket) => {
-		socket.emit('panelEvent', action)
-	})
+	if (!self.socket) return
+
+	self.socket.emit('panelEvent', action)
 }

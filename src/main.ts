@@ -1,6 +1,6 @@
 import { InstanceBase, InstanceStatus, runEntrypoint, type SomeCompanionConfigField } from '@companion-module/base'
 import { GetConfigFields, type ModuleConfig } from './config.js'
-import type { SyncResponse, ChannelSyncData } from './types.d.js'
+import type { SyncResponse, ChannelSyncData } from './types.js'
 import { Server, Socket } from 'socket.io'
 import { createServer } from 'http'
 import { UpdateActions } from './actions.js'
@@ -17,10 +17,10 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 	server = createServer()
 	io = new Server(this.server, {
 		cors: {
-			origin: '*',
+			origin: [/^https:\/\/.*\.webcomms\.net$/, 'http://localhost:5173', 'http://127.0.0.1:5173'],
 		},
 	})
-	sockets: Socket[] = []
+	socket?: Socket
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -32,15 +32,16 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 		this.updateStatus(InstanceStatus.Connecting)
 
 		this.updateActions()
+		this.updateFeedbacks()
 
 		this.io.on('connect', (socket: Socket) => {
 			this.log('info', 'New connection')
-			this.sockets.push(socket)
-			console.log(socket.connected)
+			this.socket = socket
 
 			socket.on('syncResponse', (syncData: SyncResponse) => {
-				console.debug('Sync Response Received', syncData)
+				this.log('debug', 'sync response received from Web Comms')
 				this.state = syncData
+				this.updateStatus(InstanceStatus.Ok)
 				this.updateActions()
 				this.updateFeedbacks()
 				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
@@ -48,7 +49,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 			socket.on('channelResponse', (channelData: ChannelSyncData) => {
 				if (!this.state) {
-					socket.emit('syncRequest')
+					this.startSyncPolling(socket)
 					return
 				}
 				const channelFound = this.state.channels.findIndex((ch) => ch.id === channelData.id)
@@ -57,26 +58,61 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 				this.state.channels.splice(channelFound, 1, channelData)
 
+				if (channelData.name !== this.state.channels.at(channelFound)!.name) {
+					this.updateActions()
+					this.updateFeedbacks()
+				}
+
 				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
 			})
 
-			socket.emit('syncRequest')
+			socket.on('disconnect', (reason) => {
+				if (this.socket) {
+					this.socket = undefined
+				}
+
+				this.state = undefined
+				this.updateStatus(InstanceStatus.Disconnected, 'No panel connected')
+				this.log('info', `Client disconnected: ${reason}`)
+				return
+			})
+
+			this.startSyncPolling(socket)
 		})
 
-		this.server.listen(7171, () => {
-			this.log('debug', `Server listening on 7171`)
-			this.updateStatus(InstanceStatus.Ok)
+		const port = Number(this.config.port) || 7171
+		if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+			this.updateStatus(InstanceStatus.BadConfig, 'Invalid port')
+			return
+		}
+
+		this.server.listen(port, () => {
+			this.log('debug', `Server listening on ${port}`)
 		})
 	}
 	// When module gets deleted
 	async destroy(): Promise<void> {
 		this.server.closeAllConnections()
+		this.server.removeAllListeners()
+		clearInterval(this.companionSyncTimeout)
 		this.log('debug', 'destroy')
 	}
 
 	async configUpdated(config: ModuleConfig): Promise<void> {
 		this.state = undefined // Reset state on config update
 		await this.init(config)
+	}
+
+	startSyncPolling(socket: Socket): void {
+		if (this.companionSyncTimeout || this.state) return
+
+		this.companionSyncTimeout = setInterval(() => {
+			if (this.state && this.companionSyncTimeout) clearInterval(this.companionSyncTimeout)
+			else {
+				this.log('debug', 'requesting sync from panel')
+				socket.emit('syncRequest')
+			}
+		}, 2000)
 	}
 
 	// Return config fields for web config
