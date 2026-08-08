@@ -1,6 +1,6 @@
 import { InstanceBase, InstanceStatus, runEntrypoint, type SomeCompanionConfigField } from '@companion-module/base'
 import { GetConfigFields, type ModuleConfig } from './config.js'
-import type { SyncResponse, ChannelSyncData } from './types.d.js'
+import type { SyncResponse, ChannelSyncData } from './types.js'
 import { Server, Socket } from 'socket.io'
 import { createServer } from 'http'
 import { UpdateActions } from './actions.js'

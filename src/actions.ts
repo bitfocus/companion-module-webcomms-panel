@@ -1,5 +1,5 @@
 import type ModuleInstance from './main.js'
-import type { ChannelAction, PanelAction, SyncResponse } from './types.d.js'
+import type { ChannelAction, PanelAction, SyncResponse } from './types.js'
 
 function getChannelChoices(state?: SyncResponse) {
 	if (!state) return []
