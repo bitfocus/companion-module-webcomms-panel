@@ -171,6 +171,9 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		},
 
+		// A user can toggle the hard output mute of a channel regardless of the volume.
+		// If the user has set the volume at 0 and toggles the output mute then the result can only be
+		// removing the mute and setting the volume to what it was before the mute, which is handled in Web Comms.
 		toggleChannelOutput: {
 			name: 'Channel: Toggle Output Mute',
 			description: 'Toggle the output mute of a channel',
