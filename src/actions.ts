@@ -285,7 +285,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Panel: Mute Output',
 			description: 'Globally mute the output of the intercom',
 			options: [],
-			callback: async () => {
+			callback: () => {
 				if (!validStateAndChannels(self, false)) {
 					return
 				}
@@ -299,7 +299,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Panel: Unmute Output',
 			description: 'Globally unmute the output of the intercom',
 			options: [],
-			callback: async () => {
+			callback: () => {
 				if (!validStateAndChannels(self, false)) {
 					return
 				}
@@ -313,7 +313,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			name: 'Panel: Toggle Panel Output',
 			description: 'Toggle the output mute of the intercom',
 			options: [],
-			callback: async () => {
+			callback: () => {
 				if (!validStateAndChannels(self, false)) {
 					return
 				}
