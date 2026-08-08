@@ -37,23 +37,3 @@ export type ChannelPermission = 'disabled' | 'listenOnly' | 'talkOnly' | 'duplex
 export type ChannelAction = 'muteInput' | 'unmuteInput' | 'muteOutput' | 'unmuteOutput' | 'setVolume'
 
 export type PanelAction = 'muteInput' | 'unmuteInput' | 'muteOutput' | 'unmuteOutput'
-
-export interface SupabaseEnvVars {
-	PUBLIC_SUPABASE_URL: string
-	PUBLIC_SUPABASE_KEY: string
-}
-
-export interface ChannelChoice {
-	id: string
-	label: string
-}
-
-export interface PGMChoice {
-	id: string
-	label: string
-}
-
-export interface RoleChoice {
-	id: string
-	label: string
-}
