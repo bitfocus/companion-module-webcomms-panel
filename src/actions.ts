@@ -8,6 +8,8 @@ function getChannelChoices(state?: SyncResponse) {
 }
 
 export function UpdateActions(self: ModuleInstance): void {
+	const channelChoices = getChannelChoices(self.state)
+
 	self.setActionDefinitions({
 		unmuteChannelInput: {
 			name: 'Channel: Activate Talk',
@@ -17,8 +19,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -46,8 +48,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -75,8 +77,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -104,8 +106,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -133,8 +135,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -162,8 +164,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -191,8 +193,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: getChannelChoices(self.state),
-					default: getChannelChoices(self.state)[0]?.id ?? '',
+					choices: channelChoices,
+					default: channelChoices[0]?.id ?? '',
 				},
 				{
 					type: 'number',
