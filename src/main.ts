@@ -57,6 +57,11 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 				this.state.channels.splice(channelFound, 1, channelData)
 
+				if (channelData.name !== this.state.channels.at(channelFound)!.name) {
+					this.updateActions()
+					this.updateFeedbacks()
+				}
+
 				this.checkFeedbacks('channelActivity', 'globalDeafen', 'globalMute', 'listenStatus', 'talkStatus')
 			})
 
