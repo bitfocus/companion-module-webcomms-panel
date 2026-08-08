@@ -3,7 +3,7 @@
 	"type": "connection",
 	"id": "webcomms-panel",
 	"name": "webcomms-panel",
-	"shortname": "Comms-Panel",
+	"shortname": "Web Comms",
 	"description": "Web Comms plugin for Companion",
 	"version": "0.0.0",
 	"license": "MIT",
@@ -22,7 +22,7 @@
 		"entrypoint": "../dist/main.js"
 	},
 	"manufacturer": "Web Comms",
-	"products": ["Panel"],
+	"products": ["Web Comms Panel"],
 	"keywords": ["Intercom", "Comms"],
 	"legacyIds": []
 }
