@@ -39,6 +39,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 			this.socket = socket
 
 			socket.on('syncResponse', (syncData: SyncResponse) => {
+				this.log('debug', 'sync response received from Web Comms')
 				this.state = syncData
 				this.updateStatus(InstanceStatus.Ok)
 				this.updateActions()
@@ -107,7 +108,10 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 		this.companionSyncTimeout = setInterval(() => {
 			if (this.state && this.companionSyncTimeout) clearInterval(this.companionSyncTimeout)
-			else socket.emit('syncRequest')
+			else {
+				this.log('debug', 'requesting sync from panel')
+				socket.emit('syncRequest')
+			}
 		}, 2000)
 	}
 
