@@ -7,6 +7,21 @@ function getChannelChoices(state?: SyncResponse) {
 	return state.channels.map(({ id, name: label }) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label))
 }
 
+function validStateAndChannels(
+	self: ModuleInstance,
+	validateChannels: boolean = true,
+): self is ModuleInstance & { state: SyncResponse } {
+	if (!self.state) {
+		self.log('warn', 'No state for panel, connection or sync required')
+		return false
+	} else if (validateChannels && !self.state.channels) {
+		self.log('warn', 'No channels in state for panel, needs new connection or sync')
+		return false
+	}
+
+	return true
+}
+
 export function UpdateActions(self: ModuleInstance): void {
 	const channelChoices = getChannelChoices(self.state)
 
@@ -24,7 +39,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -53,7 +68,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -82,7 +97,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -111,7 +126,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -140,7 +155,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -169,7 +184,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -207,7 +222,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: (action) => {
-				if (!self.state || !self.state.channels) {
+				if (!validStateAndChannels(self)) {
 					return
 				}
 
@@ -229,7 +244,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally mute your microphone',
 			options: [],
 			callback: () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
@@ -243,7 +258,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally unmute your microphone',
 			options: [],
 			callback: () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
@@ -257,7 +272,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally toggle your microphone on/off',
 			options: [],
 			callback: () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
@@ -271,7 +286,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally mute the output of the intercom',
 			options: [],
 			callback: async () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
@@ -285,7 +300,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Globally unmute the output of the intercom',
 			options: [],
 			callback: async () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
@@ -299,7 +314,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			description: 'Toggle the output mute of the intercom',
 			options: [],
 			callback: async () => {
-				if (!self.state) {
+				if (!validStateAndChannels(self, false)) {
 					return
 				}
 
