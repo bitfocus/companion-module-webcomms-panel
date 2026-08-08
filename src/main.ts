@@ -87,6 +87,7 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 	// When module gets deleted
 	async destroy(): Promise<void> {
 		this.server.closeAllConnections()
+		clearInterval(this.companionSyncTimeout)
 		this.log('debug', 'destroy')
 	}
 
