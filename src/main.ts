@@ -17,7 +17,12 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 	server = createServer()
 	io = new Server(this.server, {
 		cors: {
-			origin: [/^https:\/\/.*\.webcomms\.net$/, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+			origin: [
+				/^https:\/\/.*\.webcomms\.net$/,
+				'https://webcomms.net',
+				'http://localhost:5173',
+				'http://127.0.0.1:5173',
+			],
 		},
 	})
 	socket?: Socket
