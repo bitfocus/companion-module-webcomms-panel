@@ -2,9 +2,20 @@ import type ModuleInstance from './main.js'
 import type { ChannelAction, PanelAction, SyncResponse } from './types.js'
 
 function getChannelChoices(state?: SyncResponse) {
-	if (!state) return []
+	if (!state) return { talk: [], listen: [] }
 
-	return state.channels.map(({ id, name: label }) => ({ id, label })).sort((a, b) => a.label.localeCompare(b.label))
+	const activeChannels = state.channels.filter((ch) => ch.permission !== 'disabled')
+	const talk = activeChannels
+		.filter((ch) => ch.permission === 'talkOnly' || ch.permission === 'duplex')
+		.map(({ id, name: label }) => ({ id, label }))
+	const listen = activeChannels
+		.filter((ch) => ch.permission === 'listenOnly' || ch.permission === 'duplex')
+		.map(({ id, name: label }) => ({ id, label }))
+
+	return {
+		talk: talk.sort((a, b) => a.label.localeCompare(b.label)),
+		listen: listen.sort((a, b) => a.label.localeCompare(b.label)),
+	}
 }
 
 function validStateAndChannels(
@@ -23,7 +34,7 @@ function validStateAndChannels(
 }
 
 export function UpdateActions(self: ModuleInstance): void {
-	const channelChoices = getChannelChoices(self.state)
+	const { talk, listen } = getChannelChoices(self.state)
 
 	self.setActionDefinitions({
 		unmuteChannelInput: {
@@ -34,8 +45,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: talk,
+					default: talk[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -63,8 +74,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: talk,
+					default: talk[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -92,8 +103,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: talk,
+					default: talk[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -121,8 +132,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: listen,
+					default: listen[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -150,8 +161,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: listen,
+					default: listen[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -182,8 +193,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: listen,
+					default: listen[0]?.id ?? '',
 				},
 			],
 			callback: (action) => {
@@ -211,8 +222,8 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'dropdown',
 					label: 'Channel',
 					id: 'channel',
-					choices: channelChoices,
-					default: channelChoices[0]?.id ?? '',
+					choices: listen,
+					default: listen[0]?.id ?? '',
 				},
 				{
 					type: 'number',
