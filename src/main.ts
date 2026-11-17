@@ -34,11 +34,36 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 	async init(config: ModuleConfig): Promise<void> {
 		this.config = config
 		this.log('info', 'Initializing module')
-		this.updateStatus(InstanceStatus.Connecting)
 
 		this.updateActions()
 		this.updateFeedbacks()
+		this.bindClients()
+		this.listen()
+	}
+	// When module gets deleted
+	async destroy(): Promise<void> {
+		this.server.closeAllConnections()
+		this.server.removeAllListeners()
+		clearInterval(this.companionSyncTimeout)
+		this.log('debug', 'destroy')
+	}
 
+	async configUpdated(config: ModuleConfig): Promise<void> {
+		const port = Number(config.port) || 7171
+		const address = this.server.address()
+		// Already bound. listen() again throws ERR_SERVER_ALREADY_LISTEN, and the host then never republishes settings.
+		if (this.server.listening && typeof address === 'object' && address?.port === port) {
+			this.config = config
+			return
+		}
+
+		this.config = config
+		this.state = undefined
+		if (this.server.listening) await this.closeServer()
+		this.listen()
+	}
+
+	bindClients(): void {
 		this.io.on('connect', (socket: Socket) => {
 			this.log('info', 'New connection')
 			this.socket = socket
@@ -84,28 +109,29 @@ export default class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 			this.startSyncPolling(socket)
 		})
+	}
 
+	async closeServer(): Promise<void> {
+		await new Promise<void>((resolve, reject) => {
+			this.server.close((error) => {
+				if (error) reject(error)
+				else resolve()
+			})
+			this.server.closeAllConnections()
+		})
+	}
+
+	listen(): void {
 		const port = Number(this.config.port) || 7171
 		if (!Number.isInteger(port) || port < 1024 || port > 65535) {
 			this.updateStatus(InstanceStatus.BadConfig, 'Invalid port')
 			return
 		}
 
+		this.updateStatus(InstanceStatus.Connecting)
 		this.server.listen(port, () => {
 			this.log('debug', `Server listening on ${port}`)
 		})
-	}
-	// When module gets deleted
-	async destroy(): Promise<void> {
-		this.server.closeAllConnections()
-		this.server.removeAllListeners()
-		clearInterval(this.companionSyncTimeout)
-		this.log('debug', 'destroy')
-	}
-
-	async configUpdated(config: ModuleConfig): Promise<void> {
-		this.state = undefined // Reset state on config update
-		await this.init(config)
 	}
 
 	startSyncPolling(socket: Socket): void {
